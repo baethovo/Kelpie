@@ -1,0 +1,51 @@
+<main class="login-container">
+    <mdui-card class="login-card">
+        <div class="login-icon">
+            <mdui-icon name="auto_stories"></mdui-icon>
+        </div>
+        <h2 class="login-header">Kelpie</h2>
+        <p class="login-subtitle"><%= t('auth.login_title') %></p>
+
+        <% if (error) { %>
+            <div class="error-message">
+                <mdui-icon name="error_outline" style="color: rgb(var(--mdui-color-error))"></mdui-icon>
+                <span><%= error %></span>
+            </div>
+        <% } %>
+
+        <form method="post" action="/login" class="login-form">
+            <mdui-text-field 
+                name="userid" 
+                label="<%= t('auth.userid') %>" 
+                required 
+                variant="filled"
+                full-width
+            ></mdui-text-field>
+            
+            <mdui-text-field 
+                type="password" 
+                name="password" 
+                label="<%= t('auth.password') %>" 
+                required 
+                variant="filled"
+                toggle-password
+                full-width
+            ></mdui-text-field>
+
+            <mdui-button type="submit" variant="filled" full-width class="login-btn">
+                <%= t('auth.login_btn') %>
+            </mdui-button>
+
+            <div class="login-options">
+                <mdui-checkbox name="remember"><%= t('auth.remember_me') %></mdui-checkbox>
+            </div>
+        </form>
+
+        <mdui-divider></mdui-divider>
+
+        <div class="register-link">
+            <span><%= t('auth.no_account') %></span>
+            <mdui-button variant="text" href="/register"><%= t('auth.register_link') %></mdui-button>
+        </div>
+    </mdui-card>
+</main>

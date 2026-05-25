@@ -1,0 +1,183 @@
+<%# ========================== API PROVIDER DASHBOARD ========================== %>
+<div class="api-provider-page">
+    <%# ---- Page Header ---- %>
+    <div class="api-page-header">
+        <div class="api-page-header-left">
+            <div>
+                <h1 class="api-page-title"><%= t('api.title') %></h1>
+                <p class="api-page-subtitle"><%= t('api.subtitle') %></p>
+            </div>
+        </div>
+        <mdui-button id="open-create-api-dialog" variant="filled" icon="add">
+            <%= t('api.add_provider') %>
+        </mdui-button>
+    </div>
+
+    <%# ---- Stats Bar ---- %>
+    <% if (settings.apiProfiles && settings.apiProfiles.length > 0) { %>
+        <div class="api-stats-bar">
+            <mdui-card class="api-stat-card" variant="filled">
+                <span class="api-stat-num"><%= settings.apiProfiles.length %></span>
+                <span class="api-stat-label"><%= t('api.total_node') %></span>
+            </mdui-card>
+            <mdui-card class="api-stat-card api-stat-ok" variant="filled">
+                <span class="api-stat-num"><%= settings.apiProfiles.filter(p => p.lastTestStatus === 'success').length %></span>
+                <span class="api-stat-label"><%= t('api.normal') %></span>
+            </mdui-card>
+            <mdui-card class="api-stat-card api-stat-err" variant="filled">
+                <span class="api-stat-num"><%= settings.apiProfiles.filter(p => p.lastTestStatus === 'error').length %></span>
+                <span class="api-stat-label"><%= t('api.abnormal') %></span>
+            </mdui-card>
+            <mdui-card class="api-stat-card api-stat-pending" variant="filled">
+                <span class="api-stat-num"><%= settings.apiProfiles.filter(p => !p.lastTestStatus).length %></span>
+                <span class="api-stat-label"><%= t('api.untested') %></span>
+            </mdui-card>
+        </div>
+    <% } %>
+
+    <%# ---- Provider Cards ---- %>
+    <div class="api-provider-grid">
+        <% if (!settings.apiProfiles || settings.apiProfiles.length === 0) { %>
+            <mdui-card class="api-empty-state" variant="outlined">
+                <mdui-icon name="cloud_off" style="font-size: 56px; opacity:0.4;"></mdui-icon>
+                <h3><%= t('api.no_providers') %></h3>
+                <p><%= t('api.no_providers_hint') %></p>
+                <mdui-button id="open-create-api-dialog-empty" variant="tonal" icon="add"><%= t('api.add_provider') %></mdui-button>
+            </mdui-card>
+        <% } else { %>
+            <% settings.apiProfiles.forEach((profile) => { %>
+                <% const isDefault = settings.selectedApiProfileId === profile.id; %>
+                <mdui-card class="api-provider-card <%= isDefault ? 'api-card-default' : '' %>" variant="filled" data-profile-id="<%= profile.id %>">
+                    <%# Top row: status + name + default badge %>
+                    <div class="api-card-top">
+                        <div class="api-card-status">
+                            <span class="api-status-dot api-status-dot-<%= profile.lastTestStatus === 'success' ? 'green' : (profile.lastTestStatus === 'error' ? 'red' : 'gray') %>"
+                                  title="<%= profile.lastTestStatus === 'success' ? t('api.online') : (profile.lastTestStatus === 'error' ? t('api.abnormal') : t('api.not_tested')) %>"></span>
+                        </div>
+                        <div class="api-card-name">
+                            <span><%= profile.name %></span>
+                            <% if (isDefault) { %>
+                                <span class="api-default-badge"><%= t('api.default') %></span>
+                            <% } %>
+                        </div>
+                        <div class="api-card-format">
+                            <mdui-icon name="<%= profile.format === 'gemini' ? 'auto_awesome' : (profile.format === 'anthropic' ? 'psychology' : 'chat') %>" style="font-size:14px;"></mdui-icon>
+                            <span><%= profile.format.toUpperCase() %></span>
+                        </div>
+                    </div>
+
+                    <%# Middle row: endpoint + model %>
+                    <div class="api-card-meta">
+                        <div class="api-card-endpoint" title="<%= profile.baseUrl %>">
+                            <mdui-icon name="link" style="font-size:13px;opacity:0.6;"></mdui-icon>
+                            <span><%= profile.baseUrl %></span>
+                        </div>
+                        <div class="api-card-model">
+                            <mdui-icon name="model_training" style="font-size:13px;opacity:0.6;"></mdui-icon>
+                            <span><%= profile.model || t('api.follow_preset') %></span>
+                        </div>
+                    </div>
+
+                    <%# Bottom row: latency + actions %>
+                    <div class="api-card-bottom">
+                        <div class="api-card-latency" id="latency-<%= profile.id %>">
+                            <% if (profile.lastTestStatus === 'success' && profile.lastTestLatencyMs != null) { %>
+                                <span class="api-latency-badge api-latency-<%= profile.lastTestLatencyMs < 500 ? 'fast' : (profile.lastTestLatencyMs < 1500 ? 'mid' : 'slow') %>"><%= profile.lastTestLatencyMs %>ms</span>
+                                <span class="api-tested-time" id="tested-at-<%= profile.id %>"><%= new Date(profile.lastTestAt).toLocaleString('zh-CN', {month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit'}) %></span>
+                            <% } else if (profile.lastTestStatus === 'error') { %>
+                                <span class="api-text-error"><%= t('api.connect_failed') %></span>
+                            <% } else { %>
+                                <span class="api-text-muted"><%= t('api.not_tested') %></span>
+                            <% } %>
+                        </div>
+                        <div class="api-card-actions">
+                            <mdui-button variant="tonal" class="inline-test-btn" data-profile-id="<%= profile.id %>" icon="network_ping"><%= t('api.speed_test') %></mdui-button>
+                            <mdui-button-icon class="open-edit-api-dialog" icon="edit" variant="tonal"
+                                data-profile-id="<%= profile.id %>"
+                                data-profile-name="<%= profile.name %>"
+                                data-profile-format="<%= profile.format %>"
+                                data-profile-baseurl="<%= profile.baseUrl %>"
+                                data-profile-apikey="<%= profile.apiKey %>"
+                                data-profile-model="<%= profile.model %>"
+                                title="<%= t('common.edit') %>"></mdui-button-icon>
+                            <% if (!isDefault) { %>
+                                <mdui-button-icon class="set-default-api-btn" icon="check_circle" variant="tonal" data-profile-id="<%= profile.id %>" title="<%= t('api.set_default') %>"></mdui-button-icon>
+                            <% } else { %>
+                                <mdui-button-icon icon="check_circle" variant="tonal" class="api-card-star-active" title="<%= t('api.current_default') %>" disabled></mdui-button-icon>
+                            <% } %>
+                            <mdui-button-icon class="delete-api-btn" icon="delete_outline" variant="tonal"
+                                data-profile-id="<%= profile.id %>"
+                                data-profile-name="<%= profile.name %>"
+                                title="<%= t('common.delete') %>"></mdui-button-icon>
+                        </div>
+                    </div>
+                </mdui-card>
+            <% }) %>
+        <% } %>
+    </div>
+</div>
+
+<%# ============================ ADD / EDIT DIALOG ============================ %>
+<mdui-dialog id="api-profile-dialog" class="api-dialog" close-on-esc close-on-overlay-click style="--mdui-dialog-width: 600px;">
+    <div slot="headline" style="display:flex; align-items:center; gap: 12px;">
+        <mdui-icon name="hub" style="color: rgb(var(--mdui-color-primary));"></mdui-icon>
+        <span id="api-profile-dialog-title"><%= t('api.add_api_provider') %></span>
+    </div>
+    
+    <div style="padding: 8px 24px 16px;">
+        <div style="display:flex; flex-direction:column; gap: 16px;">
+            <input type="hidden" id="api-profile-id" value="">
+
+            <mdui-text-field id="api-profile-name" label="<%= t('api.node_name') %>" placeholder="<%= t('api.node_name_placeholder') %>" icon="label_outline" variant="outlined" required full-width></mdui-text-field>
+
+            <mdui-select id="api-profile-format" label="<%= t('api.format_label') %>" icon="api" variant="outlined" full-width>
+                <% (apiFormats || []).forEach((fmt) => { %>
+                    <mdui-menu-item value="<%= fmt.id %>"><%= fmt.label %></mdui-menu-item>
+                <% }) %>
+            </mdui-select>
+
+            <mdui-text-field id="api-profile-baseurl" label="API Base URL" placeholder="https://api.openai.com/v1" icon="link" variant="outlined" required full-width></mdui-text-field>
+
+            <mdui-text-field id="api-profile-apikey" label="API Key" placeholder="sk-..." type="password" icon="vpn_key" variant="outlined" required full-width>
+                <mdui-button-icon slot="end-icon" id="toggle-api-key-visibility" icon="visibility_off" title="<%= t('api.toggle_visibility') %>"></mdui-button-icon>
+            </mdui-text-field>
+
+            <div class="api-model-field-wrap">
+                <mdui-text-field id="api-profile-model" label="<%= t('api.bind_model') %>" placeholder="gpt-4o" icon="model_training" variant="outlined" full-width></mdui-text-field>
+                <mdui-button id="fetch-models-btn" variant="tonal" icon="download"><%= t('api.fetch_models') %></mdui-button>
+            </div>
+
+            <div id="model-list-panel" style="display:none;">
+                <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+                    <mdui-text-field id="model-search-input" label="<%= t('api.search') %>" icon="search" variant="outlined" clearable full-width></mdui-text-field>
+                    <span id="model-count-label" style="font-size:12px; white-space:nowrap;opacity:0.7;"></span>
+                </div>
+                <div id="model-list-grid" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+            </div>
+
+            <div id="api-test-result" class="api-test-result" style="display:none;"></div>
+        </div>
+    </div>
+
+    <div slot="action" style="display:flex; gap:8px; padding: 0 8px 8px;">
+        <mdui-button id="test-api-btn" variant="outlined" icon="science"><%= t('api.test_connection') %></mdui-button>
+        <div style="flex:1;"></div>
+        <mdui-button variant="text" onclick="document.getElementById('api-profile-dialog').open = false;"><%= t('common.cancel') %></mdui-button>
+        <mdui-button id="api-profile-save-btn" variant="filled" icon="save"><%= t('api.save_node') %></mdui-button>
+    </div>
+</mdui-dialog>
+
+<%# ============================ DELETE CONFIRM ============================ %>
+<mdui-dialog id="delete-api-confirm-dialog" close-on-overlay-click>
+    <mdui-icon slot="icon" name="warning_amber" style="color: rgb(var(--mdui-color-error));"></mdui-icon>
+    <h3 slot="headline"><%= t('api.delete_confirm_title') %></h3>
+    <p id="delete-api-confirm-text"><%= t('api.delete_confirm_text') %></p>
+    <input type="hidden" id="delete-api-profile-id" value="">
+    <div slot="action">
+        <mdui-button variant="text" onclick="document.getElementById('delete-api-confirm-dialog').open = false;"><%= t('common.cancel') %></mdui-button>
+        <mdui-button id="confirm-delete-api-btn" variant="filled"
+            style="background:rgb(var(--mdui-color-error)); color:rgb(var(--mdui-color-on-error));">
+            <%= t('common.delete_confirm') %>
+        </mdui-button>
+    </div>
+</mdui-dialog>

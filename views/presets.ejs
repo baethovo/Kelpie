@@ -1,0 +1,19 @@
+<%
+var pageTitle = t('presets.title') + ' - Kelpie';
+%>
+<%- include('layouts/main-layout', {
+    title: pageTitle,
+    user,
+    showNavbar: true,
+    wrapperClass: '',
+    bodyClass: '',
+    error,
+    success,
+    presetTypes,
+    selectedType,
+    presets,
+    selectedFile,
+    selectedPreset,
+    presetSections,
+    contentPartial: 'partials/presets-content',
+}) %>

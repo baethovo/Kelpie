@@ -1,0 +1,532 @@
+<% 
+    const aiMessages = (messages || []).filter((item) => item.speakerType === 'ai');
+    const floorCount = Number(room.floorCount || aiMessages.length || 0);
+    const normalizeContent = (c) => String(c || '').trim().replace(/\r\n/g, '\n').replace(/\n\n+/g, '\n\n');
+    
+    // Identity alignment: Use username + content for deduplication
+    const existingPlayerKeys = new Set(
+        (messages || [])
+            .filter(m => m.speakerType === 'player' || !m.speakerType)
+            .map(m => `${(m.username || '').trim()}::${normalizeContent(m.content)}`)
+    );
+
+    const submittedMembers = (members || []).filter((member) => {
+        if (!member.isReady || !member.lastInput) return false;
+        const key = `${(member.username || '').trim()}::${normalizeContent(member.lastInput)}`;
+        return !existingPlayerKeys.has(key);
+    });
+    
+    // Combine persisted messages with pending inputs from ready members
+    const pendingMessages = submittedMembers.map((m) => ({
+        speakerType: 'player',
+        userId: m.userId,
+        username: m.username,
+        displayName: m.displayName || m.username,
+        content: m.lastInput,
+        id: 'pending_' + (m.userId || m.username),
+        pending: true,
+        meta: { source: 'player_submit' }
+    }));
+    
+    // Concat and ensure newest are still at the bottom (ASC order)
+    const allTimelineMessages = [...(messages || []), ...pendingMessages].slice(-240);
+    
+    const narratorName = (narrator && narrator.name) ? narrator.name : t('room.ai_narrator');
+    const narratorAvatar = (narrator && narrator.avatarUrl) ? narrator.avatarUrl :
+    ('/api/user/avatar/GM_' + encodeURIComponent(room.code));
+    const isHost = String(room.hostUserId) === String(user.id);
+    const formatMessageTime = (value) => {
+    if (!value) return '';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return '';
+    return parsed.toLocaleTimeString('zh-CN', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    };
+    %>
+    <div class="room-page-shell" data-room-page data-room-code="<%= room.code %>"
+        data-narrator-name="<%= narratorName %>" data-narrator-avatar="<%= narratorAvatar %>"
+        data-is-host="<%= isHost ? '1' : '0' %>" data-user-id="<%= user.id %>" data-host-userid="<%= room.hostUserid %>"
+        data-html-render-enabled="<%= preferences.regexHtmlRenderEnabled ? 'true' : 'false' %>"
+        data-whole-html-block-render-enabled="<%= preferences.wholeHtmlBlockRenderEnabled ? 'true' : 'false' %>"
+        data-js-render-enabled="<%= preferences.jsRenderEnabled ? 'true' : 'false' %>">
+        <style>
+            .room-background-container {
+                background-image: url('<%= narratorAvatar %>');
+            }
+        </style>
+        <!-- Right Info Drawer (Modernized) -->
+        <mdui-navigation-drawer id="room-info-drawer" placement="right" close-on-esc close-on-overlay-click>
+            <div class="room-info-content" style="padding: 24px 16px;">
+                <h2 style="margin: 0 0 20px 8px; font-weight: 700; font-size: 20px; color: rgb(var(--mdui-color-primary));"><%= t('room.info_panel') %></h2>
+                
+                <mdui-card class="room-character-card" variant="filled" style="padding: 16px; margin-bottom: 24px; border-radius: 16px; display: flex; align-items: center; gap: 16px;">
+                    <mdui-avatar class="room-character-avatar" src="<%= narratorAvatar %>" style="width:56px; height:56px; flex-shrink:0;"></mdui-avatar>
+                    <div class="room-character-meta" style="flex: 1; min-width: 0;">
+                        <div class="room-character-name mdui-text-truncate" style="font-size: 16px; font-weight: 600;"><%= narratorName %></div>
+                        <div class="mdui-typo-caption mdui-text-truncate" style="opacity: 0.7; margin-top: 2px;"><%= t('room.session_character') %></div>
+                    </div>
+                </mdui-card>
+
+                <div class="room-info-section" style="margin-bottom: 24px;">
+                    <h3 style="margin: 0 0 8px 8px; font-size: 13px; opacity: 0.7; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;"><%= t('room.basic_info') %></h3>
+                    <mdui-list class="room-info-list" style="background: transparent;">
+                        <mdui-list-item rounded icon="tag" class="copyable-code" data-copy="<%= room.joinCode %>"><%= t('room.room_join_code') %> <span slot="end-icon" style="font-family: var(--mdui-font-family-mono); opacity: 0.8; font-weight: bold; color: rgb(var(--mdui-color-primary));"><%= room.joinCode %></span></mdui-list-item>
+                        <mdui-list-item rounded icon="fingerprint" class="copyable-code" data-copy="<%= room.code %>"><%= t('room.roomid') %> <span slot="end-icon" style="font-family: var(--mdui-font-family-mono); opacity: 0.6;"><%= room.code %></span></mdui-list-item>
+                        <mdui-list-item rounded icon="forum"><%= t('room.session_name') %> <span slot="end-icon" class="mdui-text-truncate" style="max-width: 120px; text-align: right;"><%= session.name %></span></mdui-list-item>
+                        <mdui-list-item rounded icon="person"><%= t('index.host') %> <span slot="end-icon" style="opacity: 0.8;"><%= room.hostUsername %></span></mdui-list-item>
+                        <mdui-list-item rounded icon="layers"><%= t('room.total_floors') %> <span id="room-floor-value" slot="end-icon" style="font-weight: bold;"><%= floorCount %></span></mdui-list-item>
+                        <mdui-list-item rounded icon="groups"><%= t('room.progress') %> <span id="room-turn-progress" slot="end-icon" style="color: rgb(var(--mdui-color-primary)); font-weight: 600;"><%= submittedMembers.length %>/<%= members.length %></span></mdui-list-item>
+                        <mdui-list-item id="room-diagnostics-btn" rounded icon="analytics" style="color: rgb(var(--mdui-color-secondary));"><%= t('room.api_request_log') %> <mdui-icon slot="end-icon" name="chevron_right"></mdui-icon></mdui-list-item>
+                    </mdui-list>
+                </div>
+
+                <div class="room-info-section" style="margin-bottom: 24px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 8px;">
+                        <h3 style="margin: 0; font-size: 13px; opacity: 0.7; font-weight: 600; text-transform: uppercase;"><%= t('room.online_members') %></h3>
+                        <mdui-badge id="room-members-count" variant="primary"><%= members.length %></mdui-badge>
+                    </div>
+                    <mdui-list id="room-members-list" style="background: rgb(var(--mdui-color-surface-container-low)); border-radius: 12px; border: 1px solid rgb(var(--mdui-color-outline-variant) / 0.5);">
+                        <% members.forEach(member => { %>
+                            <mdui-list-item rounded data-member-userid="<%= member.userid %>" class="room-member-item">
+                                <div slot="icon" style="position:relative; width:32px; height:32px;">
+                                    <mdui-avatar src="/api/user/avatar/<%= encodeURIComponent(member.userid || member.username) %>" style="width:32px; height:32px;"></mdui-avatar>
+                                    <span class="member-online-dot<%= member.isOnline ? ' online' : ' offline' %>" data-member-online></span>
+                                </div>
+                                <%= member.displayName || member.username %>
+                                <%
+                                    let statusKey = 'room.thinking';
+                                    let statusColor = 'rgb(var(--mdui-color-on-surface-variant))';
+                                    if (member.isLeft) { statusKey = 'room.left'; }
+                                    else if (member.isReady) { statusKey = 'room.ready'; statusColor = 'rgb(var(--mdui-color-primary))'; }
+                                    else if (!member.isOnline) { statusKey = 'room.offline'; }
+                                %>
+                                <span slot="end-icon" class="mdui-typo-caption" style="font-weight: 600; color: <%= statusColor %>;" data-member-status><%= t(statusKey) %></span>
+                            </mdui-list-item>
+                        <% }) %>
+                    </mdui-list>
+                </div>
+                
+                <div style="flex: 1;"></div>
+
+                <% if (isHost) { %>
+                    <div class="room-actions-host" style="display: flex; flex-direction: column; gap: 8px; margin-top: auto;">
+                        <mdui-button id="room-settings-btn" variant="tonal" icon="settings" full-width style="border-radius: 12px; height: 48px;">
+                            <%= t('room.modify_room_settings') %>
+                        </mdui-button>
+                        <mdui-button id="room-leave-button" variant="text" icon="logout" full-width style="color: rgb(var(--mdui-color-error)); border-radius: 12px; height: 48px;">
+                            <%= t('room.force_close_room') %>
+                        </mdui-button>
+                    </div>
+                <% } else { %>
+                    <mdui-button id="room-leave-button" variant="text" icon="logout" full-width style="color: rgb(var(--mdui-color-error)); border-radius: 12px; height: 48px; margin-top: auto;">
+                        <%= t('room.leave_room') %>
+                    </mdui-button>
+                <% } %>
+            </div>
+        </mdui-navigation-drawer>
+
+        <!-- Persona Dialog - Redesigned for Premium Aesthetics -->
+        <mdui-dialog id="room-persona-dialog" class="persona-dialog" close-on-esc close-on-overlay-click style="--mdui-dialog-width: 680px;">
+            <div slot="headline" class="dialog-header-clean">
+                <div class="dialog-title-group">
+                    <h2 class="dialog-headline"><%= t('room.character_mapping') %></h2>
+                    <span class="dialog-subtitle"><%= t('room.character_mapping_desc') %></span>
+                </div>
+                <mdui-button-icon class="dialog-close-btn" id="room-persona-close" icon="close" onclick="document.getElementById('room-persona-dialog').open = false"></mdui-button-icon>
+            </div>
+
+            <!-- Editor Tabs -->
+            <mdui-tabs id="persona-editor-tabs" value="tab-edit" class="persona-tabs">
+                <mdui-tab value="tab-edit" icon="edit"><%= t('room.edit_persona') %></mdui-tab>
+                <mdui-tab value="tab-preview" icon="visibility"><%= t('room.render_preview') %></mdui-tab>
+
+                <mdui-tab-panel slot="panel" value="tab-edit" style="padding: 16px 32px 24px;">
+                    <mdui-text-field id="room-persona-displayname" label="<%= t('room.room_display_name') %>" variant="outlined" style="width: 100%; margin-bottom: 12px;" placeholder="<%= t('room.room_display_name_placeholder') %>"></mdui-text-field>
+
+                    <div class="persona-info-line" style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px; opacity: 0.8;">
+                        <mdui-icon name="info"></mdui-icon>
+                        <div class="mdui-typo-body-2"><span><%= t('room.persona_scoped') %></span></div>
+                    </div>
+
+                    <mdui-text-field id="room-persona-input" variant="outlined" rows="12" autosize max-rows="18" 
+                        placeholder="<%= t('room.persona_placeholder') %>" style="width: 100%;"></mdui-text-field>
+                </mdui-tab-panel>
+
+                <mdui-tab-panel slot="panel" value="tab-preview" style="padding: 16px 32px 24px;">
+                    <div id="room-persona-preview" class="markdown-body persona-preview-box" 
+                        style="min-height: 340px; max-height: 480px; overflow-y: auto; padding: 20px; border-radius: 16px;">
+                        <span style="opacity: 0.5;"><%= t('room.no_preview_content') %></span>
+                    </div>
+                </mdui-tab-panel>
+            </mdui-tabs>
+            
+            <mdui-button slot="action" variant="text" onclick="document.getElementById('room-persona-dialog').open = false" style="border-radius: 12px;"><%= t('common.cancel') %></mdui-button>
+            <mdui-button slot="action" id="room-persona-save" variant="filled" icon="check" style="border-radius: 12px; padding: 0 24px;"><%= t('room.save_and_apply') %></mdui-button>
+        </mdui-dialog>
+
+        <!-- Room Settings Dialog (Host Only) -->
+        <mdui-dialog id="room-settings-dialog" class="persona-dialog" close-on-esc close-on-overlay-click style="--mdui-dialog-width: 600px;">
+            <div slot="headline" class="dialog-header-clean">
+                <div class="dialog-title-group">
+                    <h2 class="dialog-headline"><%= t('room.room_settings') %></h2>
+                    <span class="dialog-subtitle"><%= t('room.room_settings_desc') %></span>
+                </div>
+                <mdui-button-icon class="dialog-close-btn" icon="close" onclick="document.getElementById('room-settings-dialog').open = false"></mdui-button-icon>
+            </div>
+
+            <div style="padding: 24px 32px 32px; display: flex; flex-direction: column; gap: 24px;">
+                <mdui-text-field label="<%= t('index.room_title') %>" id="edit-room-title" variant="outlined" value="<%= room.title %>" placeholder="<%= t('room.room_title_placeholder') %>" full-width></mdui-text-field>
+                
+                <div class="form-row-responsive">
+                    <mdui-text-field label="<%= t('room.room_password') %>" id="edit-room-password" type="password" variant="outlined" placeholder="<%= t('room.password_leave_empty') %>" toggle-password></mdui-text-field>
+                    <div class="switch-container-premium">
+                        <span><%= t('room.show_publicly') %></span>
+                        <mdui-switch id="edit-room-public" <%= room.isPublic ? 'checked' : '' %>></mdui-switch>
+                    </div>
+                </div>
+
+                <div style="height: 1px; background: rgba(var(--mdui-color-outline-variant), 0.3); margin: 4px 0;"></div>
+
+                <mdui-text-field label="<%= t('room.takeover_prompt_label') %>" id="edit-room-takeover-prompt" variant="outlined" value="<%= room.takeover_prompt || '' %>" placeholder="<%= t('room.takeover_prompt_placeholder') %>" full-width rows="3" autosize></mdui-text-field>
+
+                <mdui-select label="<%= t('room.system_preset') %>" id="edit-room-preset" variant="outlined" full-width value="<%= session.presetFile || '' %>">
+                    <mdui-menu-item value=""><%= t('room.keep_default') %></mdui-menu-item>
+                    <% presets.forEach(p => { %>
+                        <mdui-menu-item value="<%= p.fileName %>" <%= p.filename === session.presetFile ? 'selected' : '' %>>
+                            <%= p.displayName %> (<%= p.fileName %>)
+                        </mdui-menu-item>
+                    <% }) %>
+                </mdui-select>
+
+                <mdui-select label="<%= t('room.world_book_label') %>" id="edit-room-worldbook" variant="outlined" full-width value="<%= session.worldBookFile || "" %>">
+                    <mdui-menu-item value=""><%= t('room.keep_default_char') %></mdui-menu-item>
+                    <% worldBooks.forEach(wb => { %>
+                        <mdui-menu-item value="<%= wb.fileName %>" <%= wb.fileName === session.worldBookFile ? "selected" : "" %>>
+                            <%= wb.displayName %> (<%= wb.fileName %>)
+                        </mdui-menu-item>
+                    <% }) %>
+                </mdui-select>
+
+                <mdui-select label="<%= t('room.api_provider_label') %>" id="edit-room-api-profile" variant="outlined" full-width value="<%= session.apiProfileId || '' %>">
+                    <% apiProfiles.forEach(p => { %>
+                        <mdui-menu-item value="<%= p.id %>" <%= p.id === session.apiProfileId ? 'selected' : '' %>>
+                            <%= p.name %> (<%= p.format.toUpperCase() %>: <%= p.model %>)
+                        </mdui-menu-item>
+                    <% }) %>
+                </mdui-select>
+            </div>
+
+            <mdui-button slot="action" variant="text" onclick="document.getElementById('room-settings-dialog').open = false;" style="border-radius: 12px;"><%= t('common.cancel') %></mdui-button>
+            <mdui-button slot="action" id="room-settings-save" variant="filled" icon="save" style="border-radius: 12px; padding: 0 24px;"><%= t('room.save_settings') %></mdui-button>
+        </mdui-dialog>
+
+        <!-- Additional Lore Books Dialog -->
+        <mdui-dialog id="room-additional-wb-dialog" class="persona-dialog" close-on-esc close-on-overlay-click style="--mdui-dialog-width: 600px;">
+            <div slot="headline" class="dialog-header-clean">
+                <div class="dialog-title-group">
+                    <h2 class="dialog-headline"><%= t('room.additional_lorebook') || 'Additional Lore Books' %></h2>
+                    <span class="dialog-subtitle"><%= t('room.additional_lorebook_desc') || 'Select additional lore books to merge' %></span>
+                </div>
+                <mdui-button-icon class="dialog-close-btn" icon="close" onclick="document.getElementById('room-additional-wb-dialog').open = false"></mdui-button-icon>
+            </div>
+
+            <div style="padding: 24px 32px 32px; display: flex; flex-direction: column; gap: 24px;">
+                <div style="display: flex; flex-direction: column; gap: 12px; max-height: 400px; overflow-y: auto;">
+                    <% if (!worldBooks || worldBooks.length === 0) { %>
+                        <div style="text-align: center; opacity: 0.5; padding: 20px;"><%= t('worldbooks.no_books_hint') %></div>
+                    <% } else { %>
+                        <% worldBooks.forEach(wb => { %>
+                            <% const isChecked = (session.additionalWorldBooks || []).includes(wb.fileName); %>
+                            <mdui-checkbox class="additional-wb-checkbox" value="<%= wb.fileName %>" <%= isChecked ? 'checked' : '' %>>
+                                <%= wb.displayName %> <span style="opacity: 0.6; font-size: 12px;">(<%= wb.fileName %>)</span>
+                            </mdui-checkbox>
+                        <% }) %>
+                    <% } %>
+                </div>
+            </div>
+
+            <mdui-button slot="action" variant="text" onclick="document.getElementById('room-additional-wb-dialog').open = false;" style="border-radius: 12px;"><%= t('common.cancel') %></mdui-button>
+            <mdui-button slot="action" id="room-additional-wb-save" variant="filled" icon="save" style="border-radius: 12px; padding: 0 24px;"><%= t('common.save') %></mdui-button>
+        </mdui-dialog>
+
+        <section class="room-stream-panel">
+            <div id="room-connection-status" class="connection-status-banner" style="display: none;">
+                <mdui-icon name="wifi_off"></mdui-icon>
+                <span><%= t('room.disconnected') %></span>
+                <mdui-linear-progress></mdui-linear-progress>
+            </div>
+            <div id="room-timeline" class="room-timeline">
+                <% if (!allTimelineMessages.length) { %>
+                    <mdui-card class="empty-state" variant="outlined">
+                        <mdui-icon name="forum_outline"></mdui-icon>
+                        <p><%= t('room.no_floor_messages') %></p>
+                    </mdui-card>
+                    <% } %>
+                        <% let lastSpeaker=null; allTimelineMessages.forEach((message, index)=> {
+                            const floorNo = Number(message.floorNo || index + 1);
+                            const isAiMessage = message.speakerType === 'ai';
+                            const isSystemMessage = message.speakerType === 'system';
+                            const isSelf = String(message.userId) === String(user.id);
+                            const speakerKey = isSystemMessage ? 'system' : (isAiMessage ? 'ai' : (message.username ||
+                            'player'));
+                            const isConsecutive = !isSystemMessage && speakerKey === lastSpeaker;
+                            lastSpeaker = speakerKey;
+
+                            const isOpening = isAiMessage && ((message.meta && String(message.meta.source || '') ===
+                            'character_opening') || floorNo === 1);
+                            const isTakeover = message.meta && message.meta.source === 'ai_takeover';
+                            %>
+                            <article
+                                class="room-floor-card <%= isSystemMessage ? 'system' : (isAiMessage ? 'ai' : 'player') %> <%= isConsecutive ? 'consecutive' : '' %> <%= isSelf ? 'is-self' : '' %> <%= message.pending ? 'pending' : '' %>"
+                                data-floor="<%= floorNo %>" data-msg-id="<%= message.id %>">
+                                <% if (!isSystemMessage && !isConsecutive) { %>
+                                    <img class="room-floor-avatar"
+                                        src="<%= isAiMessage ? narratorAvatar : ('/api/user/avatar/' + encodeURIComponent(message.userid || message.userId || message.username || 'player')) %>"
+                                        alt="Avatar">
+                                    <% } %>
+                                        <div class="room-floor-main">
+                                            <% if (!isConsecutive && !isSystemMessage) { %>
+                                                <div class="room-floor-head">
+                                                    <span class="room-player-title">
+                                                        <% 
+                                                         let displayName = isAiMessage ? narratorName : (isSystemMessage ? t('room.system_message') : '');
+                                                         if (!displayName) {
+                                                             const memberInfo = (members || []).find(m => m.userid === message.userid || m.username === message.userid || m.userid === message.username || m.username === message.username);
+                                                             if (memberInfo && memberInfo.displayName) {
+                                                                 displayName = memberInfo.displayName;
+                                                             } else {
+                                                                 displayName = message.username || (isAiMessage ? narratorName : t('room.player'));
+                                                             }
+                                                         }
+                                                        %>
+                                                        <%= displayName %>
+                                                    </span>
+                                                    <% if (isOpening) { %>
+                                                        <mdui-badge class="room-inline-badge"
+                                                            variant="success"><%= t('room.opening') %></mdui-badge>
+                                                        <% } %>
+                                                            <% if (isTakeover) { %>
+                                                                <mdui-badge class="room-inline-badge"
+                                                                    variant="warning"><%= t('room.takeover') %></mdui-badge>
+                                                                <% } %>
+                                                                    <% if (message.createdAt) { %>
+                                                                        <span class="room-message-time">
+                                                                            <%= formatMessageTime(message.createdAt) %>
+                                                                        </span>
+                                                                        <% } %>
+                                                                            <span class="floor-number">#<%= floorNo %>
+                                                                            </span>
+                                                </div>
+                                                <% } %>
+                                                    <mdui-card class="room-floor-content room-message-card"
+                                                        variant="filled">
+                                                        <div class="room-player-line markdown-body">
+                                                            <%= message.content %>
+                                                        </div>
+                                                        <% if (message.meta && (message.meta.tokens || message.meta.seconds)) { %>
+                                                            <div class="room-message-metrics-line">
+                                                                [<%= message.meta.seconds ? message.meta.seconds + 's' : '' %><%= (message.meta.seconds && message.meta.tokens) ? ' | ' : '' %><%= message.meta.tokens ? message.meta.tokens + 't' : '' %>]
+                                                            </div>
+                                                        <% } %>
+                                                    </mdui-card>
+                                                    <% if (!isSystemMessage) { %>
+                                                    <div class="room-floor-actions">
+                                                        <mdui-button-icon class="room-floor-copy-btn"
+                                                            icon="content_copy" variant="text" size="small"
+                                                            data-id="<%= message.id %>"
+                                                            data-content="<%= message.content %>"></mdui-button-icon>
+                                                        <mdui-button-icon class="room-floor-edit-btn"
+                                                            icon="edit" variant="text" size="small"
+                                                            data-id="<%= message.id %>"
+                                                            data-content="<%= message.content %>"
+                                                            data-pending="<%= message.pending ? '1' : '0' %>"></mdui-button-icon>
+                                                    </div>
+                                                    <% } %>
+                                        </div>
+                            </article>
+                            <% }) %>
+            </div>
+        </section>
+
+        <section class="room-composer">
+            <div class="room-composer-status" id="room-composer-menu">
+                <div style="position:relative;">
+                    <mdui-button-icon id="room-menu-btn" class="room-menu-trigger" icon="menu" variant="text" title="<%= t('room.quick_menu') %>"></mdui-button-icon>
+                    <mdui-card id="room-quick-menu" style="position:absolute;bottom:48px;left:0;min-width:160px;display:none;z-index:999;border-radius:12px;padding:4px;" variant="elevated">
+                        <mdui-list style="background:transparent;">
+                            <mdui-list-item id="room-force-start-item" rounded icon="bolt"><%= t('room.force_start') %></mdui-list-item>
+                            <mdui-list-item id="room-regenerate-item" rounded icon="refresh"><%= t('room.regenerate') %></mdui-list-item>
+                        </mdui-list>
+                    </mdui-card>
+                </div>
+            </div>
+            <div class="room-composer-input">
+                <mdui-text-field id="room-input-content" class="room-input-field"
+                    placeholder="<%= t('room.input_placeholder') %> (Ctrl+Enter)..." variant="outlined" autosize min-rows="1"
+                    max-rows="6"></mdui-text-field>
+            </div>
+            <div class="room-composer-actions">
+                <mdui-button-icon id="room-edit-button" class="room-action-icon" icon="edit" aria-label="<%= t('room.cancel_ready') %>"
+                    title="<%= t('room.cancel_ready') %>"></mdui-button-icon>
+                <mdui-button-icon id="room-ready-button" class="room-action-icon room-ready-icon" variant="filled"
+                    icon="send" aria-label="<%= t('room.submit_ready') %>" title="<%= t('room.submit_ready') %>" disabled></mdui-button-icon>
+            </div>
+        </section>
+
+        <mdui-dialog id="edit-message-dialog" close-on-overlay-click class="persona-dialog" style="--mdui-dialog-width: 640px;">
+            <div slot="headline" class="dialog-header-clean">
+                <div class="dialog-title-group">
+                    <h2 class="dialog-headline"><%= t('room.edit_message') %></h2>
+                    <span class="dialog-subtitle"><%= t('room.edit_message_desc') %></span>
+                </div>
+                <mdui-button-icon class="dialog-close-btn" icon="close" onclick="document.getElementById('edit-message-dialog').open = false"></mdui-button-icon>
+            </div>
+            <div class="room-edit-dialog-body" style="padding: 16px 32px 24px;">
+                <mdui-text-field id="edit-message-content" label="<%= t('room.edit_original_text') %>" variant="outlined" autosize min-rows="4"
+                    max-rows="15" style="width: 100%;"></mdui-text-field>
+                <input type="hidden" id="edit-message-id">
+            </div>
+            <div slot="action">
+                <mdui-button variant="text"
+                    onclick="document.getElementById('edit-message-dialog').open = false;" style="border-radius: 12px;"><%= t('common.cancel') %></mdui-button>
+                <mdui-button id="confirm-edit-message-btn" variant="filled" icon="check" style="border-radius: 12px; padding: 0 24px;"><%= t('room.save_edit') %></mdui-button>
+            </div>
+        </mdui-dialog>
+
+        <mdui-dialog id="room-regex-dialog" class="persona-dialog" close-on-overlay-click style="--mdui-dialog-width: 680px;">
+            <div slot="headline" class="dialog-header-clean">
+                <div class="dialog-title-group">
+                    <h2 class="dialog-headline"><%= t('room.builtin_regex_mapping') %></h2>
+                    <span class="dialog-subtitle"><%= t('room.regex_active_desc') %></span>
+                </div>
+                <mdui-button-icon class="dialog-close-btn" icon="close" onclick="document.getElementById('room-regex-dialog').open = false"></mdui-button-icon>
+            </div>
+            <div style="padding: 16px 32px 24px; display: flex; flex-direction: column; gap: 16px;">
+                <mdui-card variant="filled" style="padding: 12px 16px; border-radius: 12px; background: rgb(var(--mdui-color-primary-container)); color: rgb(var(--mdui-color-on-primary-container));">
+                    <div style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600;">
+                        <mdui-icon name="api" style="font-size: 18px;"></mdui-icon>
+                        <span><%= t('room.global_regex_preset') %>: </span>
+                        <span id="room-regex-preset-name" style="font-weight: 700; opacity: 0.9;"><%= session.presetFile || t('room.fallback_default') %></span>
+                    </div>
+                </mdui-card>
+
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <mdui-text-field id="room-regex-search" placeholder="<%= t('common.search') %>..." variant="outlined" style="flex: 1;">
+                        <mdui-icon slot="icon" name="search"></mdui-icon>
+                    </mdui-text-field>
+                    <mdui-select id="room-regex-stage-filter" variant="outlined" value="all" style="width: 140px;">
+                        <mdui-menu-item value="all"><%= t('common.all') || 'All' %></mdui-menu-item>
+                        <mdui-menu-item value="incoming"><%= t('room.regex_incoming') || 'User Input' %></mdui-menu-item>
+                        <mdui-menu-item value="outgoing"><%= t('room.regex_outgoing') || 'AI Output' %></mdui-menu-item>
+                        <mdui-menu-item value="display"><%= t('room.regex_display') || 'Display' %></mdui-menu-item>
+                        <mdui-menu-item value="slash"><%= t('room.regex_slash') || 'Slash' %></mdui-menu-item>
+                        <mdui-menu-item value="world_info"><%= t('room.regex_worldinfo') || 'World Info' %></mdui-menu-item>
+                    </mdui-select>
+                    <span id="room-regex-count" style="display: flex; align-items: center; font-size: 13px; opacity: 0.6; white-space: nowrap;"></span>
+                </div>
+
+                <div id="room-regex-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 55vh; overflow-y: auto;">
+                </div>
+            </div>
+            <div slot="action">
+                <mdui-button variant="tonal" onclick="document.getElementById('room-regex-dialog').open = false;" style="border-radius: 12px;"><%= t('room.close_dialog') %></mdui-button>
+            </div>
+        </mdui-dialog>
+
+        <mdui-dialog id="room-diagnostics-dialog" close-on-overlay-click style="--mdui-dialog-width: 800px; max-width: 95vw;">
+            <h3 slot="headline" style="color: rgb(var(--mdui-color-secondary)); font-weight: 700;"><%= t('room.diagnostics_title') %></h3>
+            <div class="room-edit-dialog-body dialog-scrollable-form" style="max-height: 70vh; padding: 0;">
+                <div id="room-diagnostics-content" style="display: flex; flex-direction: column; gap: 12px; padding: 8px;">
+                    <div style="text-align: center; padding: 40px; opacity: 0.6;">
+                        <mdui-icon name="history" style="font-size: 48px; margin-bottom: 12px;"></mdui-icon>
+                        <div><%= t('room.no_diagnostic_logs') %></div>
+                    </div>
+                </div>
+            </div>
+            <div slot="action">
+                <mdui-button variant="tonal" onclick="document.getElementById('room-diagnostics-dialog').open = false;" style="border-radius: 12px;"><%= t('common.close') %></mdui-button>
+            </div>
+        </mdui-dialog>
+
+        <%# Force Start Confirm Dialog %>
+        <mdui-dialog id="force-start-confirm-dialog" class="alert-dialog" close-on-overlay-click>
+            <span slot="headline"><%= t('room.force_start') %></span>
+            <p><%= t('room.force_start_confirm') %></p>
+            <div slot="action">
+                <mdui-button variant="text" onclick="document.getElementById('force-start-confirm-dialog').open = false;"><%= t('common.cancel') %></mdui-button>
+                <mdui-button id="confirm-force-start-btn" variant="filled" style="color:rgb(var(--mdui-color-on-error));background:rgb(var(--mdui-color-error));"><%= t('common.confirm') %></mdui-button>
+            </div>
+        </mdui-dialog>
+
+        <%# Regenerate Confirm Dialog %>
+        <mdui-dialog id="regenerate-confirm-dialog" class="alert-dialog" close-on-overlay-click>
+            <span slot="headline"><%= t('room.regenerate') %></span>
+            <p><%= t('room.regenerate_confirm') %></p>
+            <div slot="action">
+                <mdui-button variant="text" onclick="document.getElementById('regenerate-confirm-dialog').open = false;"><%= t('common.cancel') %></mdui-button>
+                <mdui-button id="confirm-regenerate-btn" variant="filled" style="color:rgb(var(--mdui-color-on-error));background:rgb(var(--mdui-color-error));"><%= t('common.confirm') %></mdui-button>
+            </div>
+        </mdui-dialog>
+
+        <%# Delete Message Confirm Dialog %>
+        <mdui-dialog id="delete-message-confirm-dialog" class="alert-dialog" close-on-overlay-click>
+            <span slot="headline"><%= t('room.delete_message') %></span>
+            <p><%= t('room.delete_message_confirm') %></p>
+            <div slot="action">
+                <mdui-button variant="text" onclick="document.getElementById('delete-message-confirm-dialog').open = false;"><%= t('common.cancel') %></mdui-button>
+                <mdui-button id="confirm-delete-msg-btn" variant="filled" style="color:rgb(var(--mdui-color-on-error));background:rgb(var(--mdui-color-error));"><%= t('common.delete_confirm') %></mdui-button>
+            </div>
+        </mdui-dialog>
+
+        <%# Leave Room Confirm Dialog %>
+        <mdui-dialog id="leave-room-confirm-dialog" class="alert-dialog" close-on-overlay-click>
+            <span slot="headline" id="leave-room-headline"><%= t('room.leave_confirm') %></span>
+            <p id="leave-room-message"><%= t('room.leave_member_msg') %></p>
+            <div slot="action">
+                <mdui-button variant="text" onclick="document.getElementById('leave-room-confirm-dialog').open = false;"><%= t('common.cancel') %></mdui-button>
+                <mdui-button id="confirm-leave-room-btn" variant="filled" style="color:rgb(var(--mdui-color-on-error));background:rgb(var(--mdui-color-error));"><%= t('common.confirm') %></mdui-button>
+            </div>
+        </mdui-dialog>
+    </div>
+    <script id="room-initial-state" type="application/json"><%- JSON.stringify({
+    room: {
+        code: room.code,
+        title: room.title,
+        hostUsername: room.hostUsername,
+        sessionId: room.sessionId,
+        floorCount: floorCount,
+        isHost: isHost,
+        isProcessing: false,
+        openingLocked: !!room.openingLocked,
+        selectedOpening: room.selectedOpening || narrator.opening || '',
+        takeoverPrompt: room.takeover_prompt || '',
+    },
+    session: {
+        id: session.id,
+        name: session.name,
+        characterFile: session.characterFile,
+        presetFile: session.presetFile || '',
+        apiProfileId: session.apiProfileId || '',
+        worldBookFile: session.worldBookFile || '',
+        additionalWorldBooks: session.additionalWorldBooks || [],
+    },
+    narrator: {
+        name: narratorName,
+        avatarUrl: narratorAvatar,
+        opening: narrator.opening || '',
+        openingOptions: narrator.openingOptions || [],
+    },
+    members: (members || []).map((member) => ({
+        username: member.username,
+        isReady: !!member.isReady,
+        isLeft: !!member.isLeft,
+        isOnline: member.isOnline === false ? false : true,
+        lastInput: member.lastInput || '',
+        isSelf: Number(member.userId) === Number(user.id),
+    })),
+    preferences: {
+        regexHtmlRenderEnabled: preferences && preferences.regexHtmlRenderEnabled !== false,
+        wholeHtmlBlockRenderEnabled: preferences && preferences.wholeHtmlBlockRenderEnabled !== false,
+        jsRenderEnabled: !!(preferences && preferences.jsRenderEnabled),
+    },
+    messages: allTimelineMessages || [],
+}).replace(/</g, '\\u003c') %></script>

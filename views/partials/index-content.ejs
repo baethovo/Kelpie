@@ -1,0 +1,109 @@
+<div class="dashboard" <% if (error) { %>data-error="<%= error %>"<% } %> <% if (success) { %>data-success="<%= success %>"<% } %>>
+    <div class="mdui-typo-title" id="lobby-rooms-title" style="margin: 24px 0 12px 12px; <% if (!rooms || rooms.length === 0) { %>display: none;<% } %>"><%= t('index.public_rooms') %></div>
+    <div class="dashboard-grid" id="lobby-room-grid">
+        <% (rooms || []).forEach((room) => { %>
+            <mdui-card class="stat-card" clickable data-room-card data-room-code="<%= room.joinCode %>" data-has-password="<%= room.hasPassword ? '1' : '0' %>">
+                <div class="card-icon">
+                    <mdui-icon name="<%= room.hasPassword ? 'lock' : 'public' %>"></mdui-icon>
+                </div>
+                <div class="card-title"><%= room.title || t('index.no_title_room') %></div>
+                <div class="card-desc">
+                    <%= t('index.room_code') %>: <strong><%= room.joinCode %></strong><br>
+                    <%= t('index.host') %>: <%= room.hostUsername %><br>
+                    <%= t('index.member_count') %>: <%= room.memberCount %>
+                </div>
+            </mdui-card>
+        <% }) %>
+    </div>
+    <section class="mdui-card stat-card" id="lobby-empty-state" style="align-items: center; padding: 48px; text-align: center; <% if (rooms && rooms.length > 0) { %>display: none;<% } %>">
+            <mdui-icon name="sentiment_dissatisfied" style="font-size: 48px; opacity: 0.5;"></mdui-icon>
+            <div class="card-title"><%= t('index.no_public_rooms') %></div>
+            <p class="card-desc"><%= t('index.no_public_rooms_hint') %></p>
+    </section>
+
+    <mdui-dropdown trigger="click">
+        <mdui-fab slot="trigger" class="characters-fab" icon="add"></mdui-fab>
+        <mdui-menu>
+            <mdui-menu-item id="open-create-room-dialog" icon="meeting_room"><%= t('index.create_room') %></mdui-menu-item>
+            <mdui-menu-item id="open-join-room-dialog" icon="login"><%= t('index.join_room') %></mdui-menu-item>
+        </mdui-menu>
+    </mdui-dropdown>
+
+    <mdui-dialog id="create-room-dialog" class="persona-dialog" close-on-esc close-on-overlay-click style="--mdui-dialog-width: 640px;">
+        <div slot="headline" class="dialog-header-clean">
+            <div class="dialog-title-group">
+                <h2 class="dialog-headline"><%= t('index.create_room_title') %></h2>
+                <span class="dialog-subtitle"><%= t('index.create_room_desc') %></span>
+            </div>
+            <mdui-button-icon class="dialog-close-btn" icon="close" onclick="document.getElementById('create-room-dialog').open = false"></mdui-button-icon>
+        </div>
+        
+        <!-- Add dummy hidden fields to trick Chrome autocomplete -->
+        <form style="display:none;"><input type="text" name="username"><input type="password" name="password"></form>
+        
+        <form id="create-room-form" method="post" action="/rooms/create" autocomplete="off" style="padding: 24px 32px 32px; display: flex; flex-direction: column; gap: 24px;">
+            <input type="hidden" name="mode" value="new">
+            <mdui-text-field name="roomTitle" label="<%= t('index.room_title') %>" placeholder="<%= t('index.room_title_placeholder') %>" required full-width variant="outlined"></mdui-text-field>
+            
+            <div class="form-row-responsive">
+                <mdui-text-field name="roomPassword" label="<%= t('index.room_password_optional') %>" type="password" autocomplete="new-password" variant="outlined" toggle-password></mdui-text-field>
+                <div class="switch-container-premium">
+                    <span><%= t('index.public_listing') %></span>
+                    <mdui-switch name="isPublic" value="on" checked></mdui-switch>
+                </div>
+            </div>
+
+            <div style="height: 1px; background: rgba(var(--mdui-color-outline-variant), 0.3); margin: 4px 0;"></div>
+
+            <mdui-select name="characterFile" label="<%= t('index.select_character') %>" full-width variant="outlined" required>
+                <mdui-menu-item value=""><%= t('index.select_character_default') %></mdui-menu-item>
+                <% (cards || []).forEach((card) => { %>
+                    <mdui-menu-item value="<%= card.fileName %>"><%= card.displayName %> (<%= card.fileName %>)</mdui-menu-item>
+                <% }) %>
+            </mdui-select>
+
+            <mdui-select name="presetFile" label="<%= t('index.select_preset') %>" full-width variant="outlined">
+                <mdui-menu-item value=""><%= t('index.use_global_default') %></mdui-menu-item>
+                <% (presets || []).forEach((preset) => { %>
+                    <mdui-menu-item value="<%= preset.fileName %>"><%= preset.displayName %> (<%= preset.fileName %>)</mdui-menu-item>
+                <% }) %>
+            </mdui-select>
+
+            <mdui-select name="apiProfileId" label="<%= t('index.api_provider') %>" full-width variant="outlined" value="<%= selectedApiProfileId %>">
+                <% (apiProfiles || []).forEach((profile) => { %>
+                    <mdui-menu-item value="<%= profile.id %>" <%= profile.id === selectedApiProfileId ? 'selected' : '' %>>
+                        <%= profile.name %> (<%= profile.format.toUpperCase() %>: <%= profile.model %>)
+                    </mdui-menu-item>
+                <% }) %>
+            </mdui-select>
+        </form>
+
+        <mdui-button slot="action" variant="text" onclick="document.getElementById('create-room-dialog').open = false;" style="border-radius: 12px;"><%= t('index.cancel_create') %></mdui-button>
+        <mdui-button slot="action" type="submit" form="create-room-form" variant="filled" style="border-radius: 12px; padding: 0 24px;"><%= t('index.start_adventure') %></mdui-button>
+    </mdui-dialog>
+
+    <mdui-dialog id="join-room-dialog" class="persona-dialog" close-on-esc close-on-overlay-click style="--mdui-dialog-width: 500px;">
+        <div slot="headline" class="dialog-header-clean" style="margin: 0;">
+            <div class="dialog-title-group">
+                <h2 class="dialog-headline"><%= t('index.join_room_title') %></h2>
+                <span class="dialog-subtitle"><%= t('index.join_room_desc') %></span>
+            </div>
+            <mdui-button-icon icon="close" onclick="document.getElementById('join-room-dialog').open = false"></mdui-button-icon>
+        </div>
+        <!-- Add dummy hidden fields to trick Chrome autocomplete -->
+        <form style="display:none;"><input type="text" name="username"><input type="password" name="password"></form>
+        <form id="join-room-form" method="post" action="/rooms/join" autocomplete="off" style="padding: 0 32px 24px; display: flex; flex-direction: column; gap: 20px;">
+            <mdui-text-field id="join-room-code" name="roomCode" label="<%= t('index.enter_room_code') %>" required autocomplete="one-time-code" full-width variant="outlined"></mdui-text-field>
+            <mdui-text-field id="join-room-password" name="roomPassword" label="<%= t('index.join_password') %>" type="password" autocomplete="new-password" full-width variant="outlined" toggle-password></mdui-text-field>
+        </form>
+        <div slot="action" style="padding: 0 32px 24px; display: flex; justify-content: flex-end; gap: 12px;">
+            <mdui-button variant="text" onclick="document.getElementById('join-room-dialog').open = false;" style="border-radius: 12px;"><%= t('index.cancel_join') %></mdui-button>
+            <mdui-button type="submit" form="join-room-form" variant="filled" style="border-radius: 12px; padding: 0 24px;"><%= t('index.join_confirm') %></mdui-button>
+        </div>
+    </mdui-dialog>
+
+    <form id="quick-join-form" method="post" action="/rooms/join" style="display: none;" autocomplete="off">
+        <input id="quick-join-room-code" name="roomCode" type="hidden">
+        <input name="roomPassword" value="" type="hidden">
+    </form>
+</div>

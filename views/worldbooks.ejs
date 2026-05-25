@@ -1,0 +1,17 @@
+<%
+var pageTitle = t('worldbooks.title') + ' - Kelpie';
+%>
+<%- include('layouts/main-layout', {
+    title: pageTitle,
+    user,
+    showNavbar: true,
+    wrapperClass: '',
+    bodyClass: '',
+    error,
+    success,
+    worldBooks,
+    selectedFile,
+    selectedWorldBook,
+    contentPartial: 'partials/worldbooks-content',
+}) %>
+

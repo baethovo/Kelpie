@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  kelpie:
+    build: .
+    image: kelpie:latest
+    container_name: kelpie-app
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped

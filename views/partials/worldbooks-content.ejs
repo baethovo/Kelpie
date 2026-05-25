@@ -1,0 +1,334 @@
+<div class="worldbooks-page">
+    <section class="mdui-card hero-card">
+        <div class="hero-content">
+            <p class="welcome-text"><%= t('worldbooks.title') %></p>
+            <h2 class="user-greeting"><%= t('worldbooks.select_heading') %></h2>
+            <p class="user-status"><%= t('worldbooks.editor_description') %></p>
+        </div>
+    </section>
+
+    <% if (error) { %>
+        <div class="error-message">
+            <mdui-icon name="error_outline"></mdui-icon>
+            <span><%= error %></span>
+        </div>
+    <% } %>
+
+    <% if (success) { %>
+        <div class="success-message">
+            <mdui-icon name="check_circle"></mdui-icon>
+            <span><%= success %></span>
+        </div>
+    <% } %>
+
+    <section class="mdui-card import-card worldbook-top-selector">
+        <h3><%= t('worldbooks.select_heading') %></h3>
+        <% if (!worldBooks || worldBooks.length === 0) { %>
+            <p class="card-desc"><%= t('worldbooks.no_books_hint') %></p>
+        <% } else { %>
+            <form method="get" action="/worldbooks" class="worldbook-select-form" autocomplete="off">
+                <mdui-select id="worldbook-selector" name="book" value="<%= selectedFile %>" label="<%= t('worldbooks.select_label') %>" full-width>
+                    <% worldBooks.forEach((book) => { %>
+                        <mdui-menu-item value="<%= book.fileName %>" <%= selectedFile === book.fileName ? 'selected' : '' %>>
+                            <%= book.displayName %> (<%= book.fileName %>)
+                        </mdui-menu-item>
+                    <% }) %>
+                </mdui-select>
+            </form>
+        <% } %>
+    </section>
+
+    <% if (!selectedWorldBook) { %>
+        <section class="mdui-card import-card">
+            <h3><%= t('worldbooks.entry_editor_title') %></h3>
+            <p class="card-desc"><%= t('worldbooks.select_first_hint') %></p>
+        </section>
+    <% } else { %>
+    <div class="worldbook-workspace">
+        <section class="mdui-card import-card worldbook-editor-card">
+            <h3><%= t('worldbooks.entry_editor_title') %></h3>
+                <form method="post" action="/worldbooks/update" class="import-form" id="worldbook-editor-form" data-save-snackbar="<%= t('worldbooks.save_snackbar') %>" autocomplete="off">
+                    <input type="hidden" name="fileName" value="<%= selectedWorldBook.fileName %>">
+                    <input type="hidden" name="worldBookJson" id="worldbook-json-output">
+                    <input type="hidden" id="worldbook-name-source" value="<%= selectedWorldBook.parsed?.name || selectedWorldBook.displayName %>">
+
+                    <mdui-text-field label="<%= t('worldbooks.file_name') %>" value="<%= selectedWorldBook.fileName %>" readonly full-width></mdui-text-field>
+
+                    <div class="editor-tabs" data-tab-group="worldbook-editor">
+                        <button type="button" class="editor-tab active" data-tab-target="wb-entry-editor"><%= t('worldbooks.tab_entries') %></button>
+                        <button type="button" class="editor-tab" data-tab-target="wb-json-preview"><%= t('worldbooks.tab_json') %></button>
+                    </div>
+
+    <section class="editor-panel active" data-tab-panel="wb-entry-editor">
+      <% if (!selectedWorldBook.entriesList || selectedWorldBook.entriesList.length === 0) { %>
+      <p class="card-desc"><%= t('worldbooks.no_entries_hint') %></p>
+      <div class="wb-entry-list" id="worldbook-entry-list"></div>
+      <% } else { %>
+      <div class="wb-entry-list prompt-collapse-list" id="worldbook-entry-list">
+        <% selectedWorldBook.entriesList.forEach((entry, index) => { %>
+        <% const positionIcons = ['person', 'person_outline', 'layers', 'vertical_align_top', 'vertical_align_bottom']; %>
+        <% const positionLabels = [t('worldbooks.position_before_char'), t('worldbooks.position_after_char'), t('worldbooks.position_depth'), t('worldbooks.position_an_top'), t('worldbooks.position_an_bottom')]; %>
+        <article class="wb-entry prompt-collapse-item <%= entry.enabled ? '' : 'disabled' %>" data-entry-card data-position="<%= entry.position %>" <% if (index === 0) { %>data-start-open="1"<% } %>>
+          <!-- Header (Collapsed State) -->
+          <header class="wb-summary prompt-collapse-header" data-toggle-entry>
+            <mdui-switch class="prompt-enabled-toggle" data-field="enabled" <%= entry.enabled ? 'checked' : '' %>></mdui-switch>
+            <div class="wb-header-title-box prompt-collapse-title-box">
+              <span class="prompt-role-tag role-assistant" data-display-position><%= positionLabels[entry.position] || t('worldbooks.position_depth') %></span>
+              <span class="prompt-name-text" data-display-comment><%= entry.comment || t('worldbooks.new_entry') %></span>
+              <span class="id-badge">Depth: <span data-display-depth><%= entry.depth || 0 %></span></span>
+              <span class="marker-badge"><span data-display-probability><%= entry.probability %>%</span></span>
+            </div>
+
+            <div class="wb-header-right prompt-item-actions">
+              <mdui-button-icon type="button" data-action="duplicate" icon="content_copy" title="<%= t('worldbooks.duplicate') %>"></mdui-button-icon>
+              <mdui-button-icon type="button" data-action="delete" icon="delete_outline" title="<%= t('common.delete') %>" style="color:rgb(var(--mdui-color-error));"></mdui-button-icon>
+            </div>
+            <mdui-icon class="expand-icon" name="expand_more"></mdui-icon>
+          </header>
+
+          <!-- Content (Expanded State) -->
+          <div class="wb-content prompt-collapse-content">
+            <!-- Section 1: Keywords & Logic -->
+            <div class="wb-section">
+              <div class="wb-section-title">
+                <mdui-icon name="tag"></mdui-icon>
+                <%= t('worldbooks.section_keywords') %>
+              </div>
+              <div class="wb-form-grid">
+                <div class="wb-form-field">
+                  <label>
+                    <mdui-icon name="vpn_key"></mdui-icon>
+                    <%= t('worldbooks.primary_keys') %>
+                  </label>
+                  <input class="wb-input" data-field="keys" value="<%= entry.keys.join(', ') %>" placeholder="<%= t('worldbooks.keys_placeholder') %>">
+                </div>
+                <div class="wb-form-field">
+                  <label>
+                    <mdui-icon name="edit_note"></mdui-icon>
+                    <%= t('worldbooks.entry_title_placeholder') %>
+                  </label>
+                  <input class="wb-input" data-field="comment" value="<%= entry.comment %>" placeholder="<%= t('worldbooks.entry_title_placeholder') %>">
+                </div>
+                <div class="wb-form-field">
+                  <label>
+                    <mdui-icon name="call_split"></mdui-icon>
+                    <%= t('worldbooks.logic') %>
+                  </label>
+                  <select data-field="selectiveLogic" class="wb-select">
+                    <option value="0" <%= Number(entry.selectiveLogic) === 0 ? 'selected' : '' %>><%= t('worldbooks.logic_and_any') %></option>
+                    <option value="1" <%= Number(entry.selectiveLogic) === 1 ? 'selected' : '' %>><%= t('worldbooks.logic_not_all') %></option>
+                    <option value="2" <%= Number(entry.selectiveLogic) === 2 ? 'selected' : '' %>><%= t('worldbooks.logic_not_any') %></option>
+                    <option value="3" <%= Number(entry.selectiveLogic) === 3 ? 'selected' : '' %>><%= t('worldbooks.logic_and_all') %></option>
+                  </select>
+                </div>
+                <div class="wb-form-field">
+                  <label>
+                    <mdui-icon name="filter_alt"></mdui-icon>
+                    <%= t('worldbooks.filter_expression') %>
+                  </label>
+                  <input class="wb-input" data-field="filterExpression" value="<%= entry.filterExpression %>" placeholder="<%= t('worldbooks.filter_placeholder') %>">
+                </div>
+              </div>
+            </div>
+
+            <!-- Section 2: Scan & Placement Settings -->
+            <div class="wb-section">
+              <div class="wb-section-title">
+                <mdui-icon name="manage_search"></mdui-icon>
+                <%= t('worldbooks.section_scan') %>
+              </div>
+              <div class="wb-form-grid compact">
+                <div class="wb-form-field">
+                  <label><%= t('worldbooks.select_label') %></label>
+                  <select data-field="position" class="wb-select">
+                    <option value="0" <%= Number(entry.position) === 0 ? 'selected' : '' %>><%= t('worldbooks.position_before_char') %></option>
+                    <option value="1" <%= Number(entry.position) === 1 ? 'selected' : '' %>><%= t('worldbooks.position_after_char') %></option>
+                    <option value="2" <%= Number(entry.position) === 2 ? 'selected' : '' %>><%= t('worldbooks.position_depth') %></option>
+                    <option value="3" <%= Number(entry.position) === 3 ? 'selected' : '' %>><%= t('worldbooks.position_an_top') %></option>
+                    <option value="4" <%= Number(entry.position) === 4 ? 'selected' : '' %>><%= t('worldbooks.position_an_bottom') %></option>
+                  </select>
+                </div>
+                <div class="wb-form-field">
+                  <label><%= t('worldbooks.depth') %></label>
+                  <input class="wb-input" type="number" data-field="depth" value="<%= entry.depth || 0 %>">
+                </div>
+                <div class="wb-form-field">
+                  <label><%= t('worldbooks.scan_depth') %></label>
+                  <input class="wb-input" type="number" data-field="scanDepth" value="<%= entry.scanDepth || 999 %>">
+                </div>
+                <div class="wb-form-field">
+                  <label><%= t('worldbooks.probability') %></label>
+                  <input class="wb-input" type="number" data-field="probability" value="<%= entry.probability %>">
+                </div>
+                <div class="wb-form-field">
+                  <label><%= t('worldbooks.case_sensitive') %></label>
+                  <select data-field="caseSensitive" class="wb-select">
+                    <option value="" <%= entry.caseSensitive === '' ? 'selected' : '' %>><%= t('worldbooks.default_option') %></option>
+                    <option value="true" <%= entry.caseSensitive === true ? 'selected' : '' %>><%= t('worldbooks.yes') %></option>
+                    <option value="false" <%= entry.caseSensitive === false ? 'selected' : '' %>><%= t('worldbooks.no') %></option>
+                  </select>
+                </div>
+                <div class="wb-form-field">
+                  <label><%= t('worldbooks.match_whole_words') %></label>
+                  <select data-field="matchWholeWords" class="wb-select">
+                    <option value="" <%= entry.matchWholeWords === '' ? 'selected' : '' %>><%= t('worldbooks.default_option') %></option>
+                    <option value="true" <%= entry.matchWholeWords === true ? 'selected' : '' %>><%= t('worldbooks.yes') %></option>
+                    <option value="false" <%= entry.matchWholeWords === false ? 'selected' : '' %>><%= t('worldbooks.no') %></option>
+                  </select>
+                </div>
+                <div class="wb-form-field">
+                  <label><%= t('worldbooks.group_scoring') %></label>
+                  <select data-field="useGroupScoring" class="wb-select">
+                    <option value="" <%= entry.useGroupScoring === '' ? 'selected' : '' %>><%= t('worldbooks.default_option') %></option>
+                    <option value="true" <%= entry.useGroupScoring === true ? 'selected' : '' %>><%= t('worldbooks.yes') %></option>
+                    <option value="false" <%= entry.useGroupScoring === false ? 'selected' : '' %>><%= t('worldbooks.no') %></option>
+                  </select>
+                </div>
+                <div class="wb-form-field">
+                  <label><%= t('worldbooks.automation_id') %></label>
+                  <input class="wb-input" data-field="automationId" value="<%= entry.automationId %>" placeholder="<%= t('worldbooks.automation_id') %>">
+                </div>
+              </div>
+            </div>
+
+
+            <!-- Section 3: Content -->
+            <div class="wb-section">
+              <div class="wb-section-title">
+                <mdui-icon name="article"></mdui-icon>
+                <%= t('worldbooks.section_content') %>
+              </div>
+              <div class="wb-form-grid">
+                <div class="wb-form-field full-width">
+                  <textarea class="wb-textarea" data-field="content" data-word-count><%= entry.content %></textarea>
+                  <div class="wb-word-counter">
+                    <mdui-icon name="text_fields"></mdui-icon>
+                    <span class="word-count-display">0</span> <%= t('worldbooks.words') %>
+                  </div>
+                </div>
+              </div>
+              <div class="wb-checkbox-group" style="margin-top: 12px;">
+                <label class="wb-checkbox-item">
+                  <input type="checkbox" data-field="excludeRecursion" <%= entry.excludeRecursion ? 'checked' : '' %>>
+                  <span><%= t('worldbooks.exclude_recursion') %></span>
+                </label>
+                <label class="wb-checkbox-item">
+                  <input type="checkbox" data-field="delayUntilRecursion" <%= entry.delayUntilRecursion ? 'checked' : '' %>>
+                  <span><%= t('worldbooks.delay_recursion') %></span>
+                </label>
+                <label class="wb-checkbox-item">
+                  <input type="checkbox" data-field="preventRecursion" <%= entry.preventRecursion ? 'checked' : '' %>>
+                  <span><%= t('worldbooks.prevent_recursion') %></span>
+                </label>
+                <label class="wb-checkbox-item">
+                  <input type="checkbox" data-field="ignoreBudget" <%= entry.ignoreBudget ? 'checked' : '' %>>
+                  <span><%= t('worldbooks.ignore_budget') %></span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Section 4: Group Settings -->
+            <div class="wb-section">
+              <div class="wb-section-title">
+                <mdui-icon name="folder"></mdui-icon>
+                <%= t('worldbooks.section_groups') %>
+              </div>
+              <div class="wb-form-grid compact">
+                <div class="wb-form-field">
+                  <label><%= t('worldbooks.group_include') %></label>
+                  <input class="wb-input" data-field="group" value="<%= entry.group %>" placeholder="<%= t('worldbooks.group_placeholder') %>">
+                </div>
+                <div class="wb-form-field">
+                  <label><%= t('worldbooks.group_weight') %></label>
+                  <input class="wb-input" type="number" data-field="groupWeight" value="<%= entry.groupWeight || 100 %>">
+                </div>
+                <div class="wb-form-field">
+                  <label><%= t('worldbooks.sticky') %></label>
+                  <input class="wb-input" type="number" data-field="sticky" value="<%= entry.sticky || 0 %>">
+                </div>
+                <div class="wb-form-field">
+                  <label><%= t('worldbooks.cooldown') %></label>
+                  <input class="wb-input" type="number" data-field="cooldown" value="<%= entry.cooldown || 0 %>">
+                </div>
+                <div class="wb-form-field">
+                  <label><%= t('worldbooks.delay') %></label>
+                  <input class="wb-input" type="number" data-field="delay" value="<%= entry.delay || 0 %>">
+                </div>
+                <div class="wb-form-field" style="justify-content: flex-end;">
+                  <label class="wb-checkbox-item" style="padding: 0; margin: 0;">
+                    <input type="checkbox" data-field="groupOverride" <%= entry.groupOverride ? 'checked' : '' %>>
+                    <span><%= t('worldbooks.group_override') %></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Section 5: Binding -->
+            <div class="wb-section">
+              <div class="wb-section-title">
+                <mdui-icon name="link"></mdui-icon>
+                <%= t('worldbooks.section_binding') %>
+              </div>
+              <div class="wb-form-grid wide">
+                <div class="wb-form-field">
+                  <label><%= t('worldbooks.character_binding') %></label>
+                  <input class="wb-input" data-field="characterFilterText" value="<%= entry.characterFilterText %>" placeholder="<%= t('worldbooks.binding_placeholder') %>">
+                </div>
+                <div class="wb-form-field">
+                  <label><%= t('worldbooks.trigger_type') %></label>
+                  <select data-field="triggerType" class="wb-select">
+                    <option value="" <%= !entry.triggerType ? 'selected' : '' %>><%= t('worldbooks.default_option') %></option>
+                    <option value="keyword" <%= entry.triggerType === 'keyword' ? 'selected' : '' %>><%= t('worldbooks.keyword') %></option>
+                    <option value="manual" <%= entry.triggerType === 'manual' ? 'selected' : '' %>><%= t('worldbooks.manual') %></option>
+                  </select>
+                </div>
+                <div class="wb-form-field" style="justify-content: flex-end;">
+                  <label class="wb-checkbox-item" style="padding: 0; margin: 0;">
+                    <input type="checkbox" data-field="characterFilterExclude" <%= entry.characterFilterExclude ? 'checked' : '' %>>
+                    <span><%= t('worldbooks.bind_exclude') %></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+        <% }) %>
+      </div>
+      <% } %>
+    </section>
+
+                    <section class="editor-panel" data-tab-panel="wb-json-preview">
+                        <div class="preset-json-tools" style="margin-bottom: 10px;">
+                            <mdui-button id="worldbook-json-apply" variant="tonal" icon="sync_alt"><%= t('worldbooks.apply_json_to_entries') %></mdui-button>
+                        </div>
+                        <mdui-text-field id="worldbook-json-preview" label="<%= t('worldbooks.json_editor_label') %>" rows="20" autosize full-width><%= selectedWorldBook.jsonText %></mdui-text-field>
+                    </section>
+
+                </form>
+        </section>
+    </div>
+    <% } %>
+
+    <mdui-dropdown trigger="click">
+        <mdui-fab slot="trigger" class="worldbook-create-fab" icon="add"></mdui-fab>
+        <mdui-menu>
+            <mdui-menu-item id="open-create-worldbook-dialog" icon="add_circle"><%= t('worldbooks.create_dialog_title') %></mdui-menu-item>
+        </mdui-menu>
+    </mdui-dropdown>
+
+    <% if (selectedWorldBook) { %>
+        <mdui-fab id="worldbook-save-fab" class="worldbook-save-fab" icon="save"></mdui-fab>
+    <% } %>
+
+    <mdui-dialog id="create-worldbook-dialog" close-on-overlay-click>
+        <h3 slot="headline"><%= t('worldbooks.create_dialog_title') %></h3>
+        <form id="create-worldbook-form" method="post" action="/worldbooks/create" class="import-form" autocomplete="off">
+            <mdui-text-field name="worldBookName" label="<%= t('worldbooks.name_label') %>" required full-width></mdui-text-field>
+            <mdui-text-field name="worldBookJson" label="<%= t('worldbooks.initial_json_label') %>" rows="8" autosize full-width></mdui-text-field>
+        </form>
+        <div slot="action">
+            <mdui-button variant="text" onclick="document.getElementById('create-worldbook-dialog').open = false;"><%= t('common.cancel') %></mdui-button>
+            <mdui-button type="submit" form="create-worldbook-form" variant="filled"><%= t('common.create') %></mdui-button>
+        </div>
+    </mdui-dialog>
+</div>

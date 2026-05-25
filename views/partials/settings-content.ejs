@@ -1,0 +1,199 @@
+<div class="settings-page" data-userid="<%= user.userid %>">
+    <section class="mdui-card settings-hero">
+        <h2 class="user-greeting"><%= t('settings.control_center') %></h2>
+    </section>
+
+    <mdui-tabs value="settings-appearance" placement="top-start" alignment="start">
+        <mdui-tab value="settings-appearance"><%= t('settings.appearance') %></mdui-tab>
+        <mdui-tab value="settings-render"><%= t('settings.logic_render') %></mdui-tab>
+        <mdui-tab value="settings-account"><%= t('settings.account_privacy') %></mdui-tab>
+
+        <!-- Appearance Tab -->
+        <mdui-tab-panel slot="panel" value="settings-appearance">
+            <div class="settings-grid">
+                <!-- Theme Settings Card -->
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <mdui-icon name="palette"></mdui-icon>
+                        <h3><%= t('settings.theme_and_color') %></h3>
+                    </div>
+                    <mdui-select id="settings-theme-select" label="<%= t('settings.theme_mode') %>" variant="outlined">
+                        <mdui-menu-item value="auto"><%= t('settings.auto_follow') %></mdui-menu-item>
+                        <mdui-menu-item value="light"><%= t('settings.light_mode') %></mdui-menu-item>
+                        <mdui-menu-item value="dark"><%= t('settings.dark_mode') %></mdui-menu-item>
+                    </mdui-select>
+
+                    <div class="settings-color-control" style="margin-top: 12px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                            <label for="settings-color-picker" style="font-weight: 500;"><%= t('settings.theme_core_color') %></label>
+                        </div>
+                        <div class="color-swatches-container" id="theme-color-swatches">
+                            <button class="color-swatch-btn" type="button" data-color="#f44336" style="background-color: #f44336;" aria-label="Red"></button>
+                            <button class="color-swatch-btn" type="button" data-color="#e91e63" style="background-color: #e91e63;" aria-label="Pink"></button>
+                            <button class="color-swatch-btn" type="button" data-color="#9c27b0" style="background-color: #9c27b0;" aria-label="Purple"></button>
+                            <button class="color-swatch-btn" type="button" data-color="#673ab7" style="background-color: #673ab7;" aria-label="Deep Purple"></button>
+                            <button class="color-swatch-btn" type="button" data-color="#3f51b5" style="background-color: #3f51b5;" aria-label="Indigo"></button>
+                            <button class="color-swatch-btn" type="button" data-color="#2196f3" style="background-color: #2196f3;" aria-label="Blue"></button>
+                            <button class="color-swatch-btn" type="button" data-color="#00bcd4" style="background-color: #00bcd4;" aria-label="Cyan"></button>
+                            <button class="color-swatch-btn" type="button" data-color="#009688" style="background-color: #009688;" aria-label="Teal"></button>
+                            <button class="color-swatch-btn" type="button" data-color="#4caf50" style="background-color: #4caf50;" aria-label="Green"></button>
+                            <button class="color-swatch-btn" type="button" data-color="#ff9800" style="background-color: #ff9800;" aria-label="Orange"></button>
+                            <button class="color-swatch-btn" type="button" data-color="#795548" style="background-color: #795548;" aria-label="Brown"></button>
+                            <button class="color-swatch-btn" type="button" data-color="#607d8b" style="background-color: #607d8b;" aria-label="Blue Grey"></button>
+                        </div>
+                        <div class="settings-color-row" style="display: flex; gap: 16px;">
+                            <input id="settings-color-picker" class="settings-color-picker" type="color" value="#3f51b5"
+                                aria-label="<%= t('settings.select_theme_color') %>" style="width: 56px; height: 56px; border-radius: 16px; border: none; cursor: pointer; padding: 0;">
+                            <mdui-text-field id="settings-color-hex" label="<%= t('settings.hex_color_value') %>" variant="filled"
+                                full-width></mdui-text-field>
+                        </div>
+                    </div>
+
+                    <div class="settings-color-control" style="margin-top: 16px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                            <label for="settings-quote-color-picker" style="font-weight: 500;"><%= t('settings.quote_color') %></label>
+                        </div>
+                        <div class="settings-color-row" style="display: flex; gap: 16px;">
+                            <input id="settings-quote-color-picker" class="settings-color-picker" type="color"
+                                value="#000000" aria-label="<%= t('settings.select_quote_color') %>" style="width: 56px; height: 56px; border-radius: 16px; border: none; cursor: pointer; padding: 0;">
+                            <mdui-text-field id="settings-quote-color-hex" label="<%= t('settings.hex_default_hint') %>" variant="filled"
+                                full-width></mdui-text-field>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Layout Settings Card -->
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <mdui-icon name="space_dashboard"></mdui-icon>
+                        <h3><%= t('settings.layout_behavior') %></h3>
+                    </div>
+                    <mdui-list style="margin-top: 8px; background: transparent;">
+                        <mdui-list-item rounded style="padding: 12px 16px; background-color: rgb(var(--mdui-color-surface-container)); border-radius: 20px;">
+                            <div style="font-weight: 500;"><%= t('settings.drawer_push_mode') %></div>
+                            <div slot="description" style="margin-top: 4px; display: flex; align-items: center; gap: 6px;">
+                                <span><%= t('settings.drawer_push_desc') %></span>
+                            </div>
+                            <mdui-switch id="settings-drawer-push-switch" slot="end-icon" checked></mdui-switch>
+                        </mdui-list-item>
+                    </mdui-list>
+                </div>
+                <!-- Language Settings Card -->
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <mdui-icon name="translate"></mdui-icon>
+                        <h3><%= t('settings.lang_title') %></h3>
+                    </div>
+                    <mdui-select id="settings-locale-select" label="<%= t('settings.interface_lang') %>" variant="outlined">
+                        <mdui-menu-item value="zh-CN">中文 (简体)</mdui-menu-item>
+                        <mdui-menu-item value="en">English</mdui-menu-item>
+                    </mdui-select>
+                    <p style="color: rgb(var(--mdui-color-on-surface-variant)); font-size: 13px; margin-top: 8px;"><%= t('settings.lang_reload_hint') %></p>
+                </div>
+            </div>
+
+            <div class="settings-action-bar">
+                <mdui-fab id="settings-appearance-save" icon="save" color="primary"></mdui-fab>
+            </div>
+        </mdui-tab-panel>
+
+        <!-- Render Tab -->
+        <mdui-tab-panel slot="panel" value="settings-render">
+            <div class="settings-grid">
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <mdui-icon name="security"></mdui-icon>
+                        <h3><%= t('settings.security_render') %></h3>
+                    </div>
+                    <p style="color: rgb(var(--mdui-color-on-surface-variant)); margin-top: 0; margin-bottom: 24px;"><%= t('settings.render_warning') %></p>
+                    
+                    <mdui-list style="display: flex; flex-direction: column; gap: 12px; background: transparent;">
+                        <mdui-list-item rounded style="background-color: rgb(var(--mdui-color-surface-container)); border-radius: 20px;">
+                            <div style="font-weight: 500;"><%= t('settings.regex_html') %></div>
+                            <div slot="description" style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
+                                <%= t('settings.regex_html_desc') %>
+                            </div>
+                            <mdui-switch id="settings-html-render-switch" slot="end-icon" <%=(settings &&
+                                settings.regexHtmlRenderEnabled !==false) ? 'checked' : '' %>></mdui-switch>
+                        </mdui-list-item>
+                        
+                        <mdui-list-item rounded style="background-color: rgb(var(--mdui-color-surface-container)); border-radius: 20px;">
+                            <div style="font-weight: 500;"><%= t('settings.whole_html_render') %></div>
+                            <div slot="description" style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
+                                <%= t('settings.whole_html_desc') %>
+                            </div>
+                            <mdui-switch id="settings-whole-html-render-switch" slot="end-icon" <%=(settings &&
+                                settings.wholeHtmlBlockRenderEnabled !==false) ? 'checked' : '' %>></mdui-switch>
+                        </mdui-list-item>
+                    </mdui-list>
+                </div>
+            </div>
+
+            <div class="settings-action-bar">
+                <mdui-fab id="settings-html-save" icon="verified" color="primary"></mdui-fab>
+            </div>
+        </mdui-tab-panel>
+
+        <!-- Account Tab -->
+        <mdui-tab-panel slot="panel" value="settings-account">
+            <div class="settings-grid">
+                <!-- Profile Editor Card -->
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <mdui-icon name="badge"></mdui-icon>
+                        <h3><%= t('settings.basic_info') %></h3>
+                    </div>
+                    
+                    <div style="display: flex; gap: 24px; align-items: flex-start; margin-top: 16px;">
+                        <label for="settings-avatar-upload" style="position: relative; cursor: pointer; display: block; flex-shrink: 0; min-width: 100px;">
+                            <img id="settings-avatar-preview" class="user-avatar-sync"
+                                src="/api/user/avatar/<%= encodeURIComponent(user.userid) %>?t=<%= Date.now() %>"
+                                style="width: 100px; height: 100px; border-radius: 24px; background: rgb(var(--mdui-color-surface-container-high)); object-fit: cover; box-shadow: var(--mdui-elevation-level-2); display: block;">
+                            <div style="position: absolute; bottom: -8px; right: -8px; background: rgb(var(--mdui-color-secondary-container)); color: rgb(var(--mdui-color-on-secondary-container)); border-radius: 50%; padding: 4px; box-shadow: var(--mdui-elevation-level-1); display: flex;">
+                                <mdui-icon name="photo_camera" style="font-size: 20px;"></mdui-icon>
+                            </div>
+                            <input type="file" id="settings-avatar-upload" accept="image/*" style="display: none;">
+                        </label>
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 16px;">
+                            <mdui-text-field label="<%= t('settings.userid_label') %>" variant="outlined"
+                                value="<%= user.userid %>" readonly style="opacity: 0.8;"></mdui-text-field>
+                            <mdui-text-field id="settings-username-input" label="<%= t('settings.username_label') %>" variant="outlined"
+                                value="<%= user.username %>" required></mdui-text-field>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Session Management Card -->
+                <div class="settings-card" style="border: 1px solid rgb(var(--mdui-color-error-container));">
+                    <div class="settings-card-header">
+                        <mdui-icon name="logout" style="color: rgb(var(--mdui-color-error)); background-color: rgb(var(--mdui-color-error-container));"></mdui-icon>
+                        <h3 style="color: rgb(var(--mdui-color-error));"><%= t('settings.session_management') %></h3>
+                    </div>
+                    <p style="color: rgb(var(--mdui-color-on-surface-variant)); margin-top: 0;"><%= t('settings.logout_hint') %></p>
+                    
+                    <form method="post" action="/logout" style="margin-top: auto;" data-turbo="false" autocomplete="off">
+                        <mdui-button type="submit" variant="filled" icon="exit_to_app" full-width style="--mdui-color-primary: var(--mdui-color-error); --mdui-color-on-primary: var(--mdui-color-on-error); border-radius: 16px; height: 48px;"><%= t('settings.logout_btn') %></mdui-button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="settings-action-bar">
+                <mdui-fab id="settings-account-save" icon="manage_accounts" color="primary"></mdui-fab>
+            </div>
+        </mdui-tab-panel>
+    </mdui-tabs>
+
+    <!-- Avatar Crop Dialog -->
+    <mdui-dialog id="avatar-crop-dialog" close-on-esc close-on-overlay-click>
+        <div style="padding: 16px;">
+            <h3 style="margin-top:0; color: rgb(var(--mdui-color-on-surface));"><%= t('settings.crop_avatar') %></h3>
+            <div style="width: 100%; max-height: 400px; overflow: hidden; background: rgb(var(--mdui-color-surface-container-high)); border-radius: 12px;">
+                <img id="avatar-crop-image" style="max-width: 100%; display: block;" src="">
+            </div>
+        </div>
+        <div slot="action">
+            <mdui-button variant="text" id="avatar-crop-cancel"><%= t('common.cancel') %></mdui-button>
+            <mdui-button variant="filled" id="avatar-crop-confirm"><%= t('settings.crop_and_upload') %></mdui-button>
+        </div>
+    </mdui-dialog>
+</div>

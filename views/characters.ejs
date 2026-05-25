@@ -1,0 +1,17 @@
+<%
+var pageTitle = t('characters.title') + ' - Kelpie';
+%>
+<%- include('layouts/main-layout', {
+    title: pageTitle,
+    user,
+    showNavbar: true,
+    wrapperClass: '',
+    bodyClass: '',
+    error,
+    success,
+    cards,
+    worldBooks,
+    selectedFile,
+    selectedCard,
+    contentPartial: 'partials/characters-content',
+}) %>

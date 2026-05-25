@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="<%= typeof locale !== 'undefined' ? locale : 'zh-CN' %>" class="mdui-theme-auto">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no">
+    <meta name="renderer" content="webkit">
+    <title>
+        <%= title %>
+    </title>
+    <link rel="stylesheet" href="/css/mdui.css">
+    <link rel="stylesheet" href="/css/material-icons.css">
+
+    <script src="/js/mdui.global.js"></script>
+    <script src="/js/turbo.es2017-umd.js"></script>
+    <script src="/js/marked.min.js"></script>
+    <link rel="stylesheet" href="/css/cropper.min.css">
+    <script src="/js/cropper.min.js"></script>
+    <link rel="stylesheet" href="/css/app.css?v=20" data-turbo-track="reload">
+    <link rel="stylesheet" href="/css/character-layout.css?v=4" data-turbo-track="reload">
+    <script src="/js/i18n.js?v=1" defer data-turbo-track="reload"></script>
+    <script src="/js/app.js?v=31" defer data-turbo-track="reload"></script>
+    <script>window.__i18nL10n = <%- typeof __i18n !== 'undefined' ? __i18n : '{}' %>;</script>
+</head>
+
+<body
+    class="<%= ['mdui-drawer-body-left', showNavbar !== false ? 'has-navbar' : '', bodyClass || ''].filter(Boolean).join(' ') %>">
+    <mdui-layout>
+        <% if (showNavbar !==false) { %>
+            <%- include('../partials/drawer', { user: user || null }) %>
+                <%- include('../partials/navbar', { user: user || null }) %>
+                    <% } %>
+
+                        <mdui-layout-main>
+                            <div class="room-background-container"></div>
+                            <div class="body-wrapper <%= wrapperClass || '' %>">
+                                <%- include('../' + contentPartial, { user: user || null, error: typeof error
+                                    !=='undefined' ? error : null, success: typeof success !=='undefined' ? success :
+                                    null, cards: typeof cards !=='undefined' ? cards : [], presets: typeof presets
+                                    !=='undefined' ? presets : [], sessions: typeof sessions !=='undefined' ? sessions :
+                                    [], rooms: typeof rooms !=='undefined' ? rooms : [], worldBooks: typeof worldBooks
+                                    !=='undefined' ? worldBooks : [], selectedFile: typeof selectedFile !=='undefined' ?
+                                    selectedFile : '' , selectedCard: typeof selectedCard !=='undefined' ? selectedCard
+                                    : null, selectedWorldBook: typeof selectedWorldBook !=='undefined' ?
+                                    selectedWorldBook : null, presetTypes: typeof presetTypes !=='undefined' ?
+                                    presetTypes : [], selectedType: typeof selectedType !=='undefined' ? selectedType
+                                    : '' , selectedPreset: typeof selectedPreset !=='undefined' ? selectedPreset : null,
+                                    presetSections: typeof presetSections !=='undefined' ? presetSections : [],
+                                    settings: typeof settings !=='undefined' ? settings : null, room: typeof room
+                                    !=='undefined' ? room : null, session: typeof session !=='undefined' ? session :
+                                    null, members: typeof members !=='undefined' ? members : [], messages: typeof
+                                    messages !=='undefined' ? messages : [], }) %>
+                            </div>
+                        </mdui-layout-main>
+    </mdui-layout>
+</body>
+
+</html>

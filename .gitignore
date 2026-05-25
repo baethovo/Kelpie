@@ -1,0 +1,15 @@
+node_modules/
+data/
+.opencode/
+*.log
+.env
+tests/
+docs/
+AGENTS.md
+PLAN.md
+test.js
+.DS_Store
+Thumbs.db
+*.tmp
+.vscode/
+.idea/

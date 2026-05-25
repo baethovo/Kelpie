@@ -1,0 +1,12 @@
+<%
+var pageTitle = 'Kelpie - ' + t('auth.login_subtitle');
+%>
+<%- include('layouts/main-layout', {
+    title: pageTitle,
+    user: null,
+    showNavbar: false,
+    wrapperClass: 'login-page',
+    bodyClass: '',
+    error,
+    contentPartial: 'partials/login-content',
+}) %>

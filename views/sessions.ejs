@@ -1,0 +1,13 @@
+<%
+var pageTitle = t('sessions.title') + ' - Kelpie';
+%>
+<%- include('layouts/main-layout', {
+    title: pageTitle,
+    user,
+    showNavbar: true,
+    wrapperClass: '',
+    bodyClass: '',
+    sessions,
+    contentPartial: 'partials/sessions-content',
+}) %>
+

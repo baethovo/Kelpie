@@ -1,0 +1,177 @@
+<div class="presets-page">
+    <%# ---- Selector Bar ---- %>
+    <div class="preset-top-selector-bar">
+        <mdui-select id="preset-selector" label="<%= t('presets.title') %>" value="<%= selectedFile %>" variant="outlined" class="preset-selector-full">
+            <mdui-menu-item value=""><%= t('presets.select_placeholder') %></mdui-menu-item>
+            <% if (!presets || presets.length === 0) { %>
+                <mdui-menu-item value="" disabled>(<%= t('presets.no_available') %>)</mdui-menu-item>
+            <% } else { %>
+                <% presets.forEach((item) => { %>
+                    <mdui-menu-item value="<%= item.fileName %>"><%= item.displayName %></mdui-menu-item>
+                <% }) %>
+            <% } %>
+        </mdui-select>
+        <mdui-button id="preset-import-trigger" icon="file_upload" variant="tonal"><%= t('presets.import_btn') %></mdui-button>
+        <mdui-button id="preset-create-btn" icon="add" variant="tonal"><%= t('presets.new_btn') %></mdui-button>
+    </div>
+
+    <% if (error) { %>
+        <div class="preset-msg preset-msg-error"><mdui-icon name="error_outline"></mdui-icon><span><%= error %></span></div>
+    <% } %>
+    <% if (success) { %>
+        <div class="preset-msg preset-msg-success"><mdui-icon name="check_circle"></mdui-icon><span><%= success %></span></div>
+    <% } %>
+
+    <form id="preset-import-form" method="post" action="/presets/import" enctype="multipart/form-data" hidden autocomplete="off">
+        <input type="hidden" name="apiId" value="api">
+        <input id="preset-import-file-input" name="presetFile" type="file" accept=".json,.settings" hidden>
+    </form>
+
+    <div class="presets-workspace">
+        <mdui-card class="presets-main" variant="filled">
+            <% if (!selectedPreset) { %>
+                <div class="empty-state" style="padding:80px 24px; text-align:center;">
+                    <mdui-icon name="tune" style="font-size:56px; opacity:0.3;"></mdui-icon>
+                    <h3><%= t('presets.no_selection') %></h3>
+                    <p><%= t('presets.select_preset_hint') %></p>
+                </div>
+            <% } else { %>
+                <form id="preset-editor-form" autocomplete="off">
+                    <input type="hidden" name="apiId" value="<%= selectedType || 'api' %>">
+                    <input type="hidden" name="presetFile" value="<%= selectedPreset.fileName %>">
+
+                    <div class="preset-editor-header">
+                        <mdui-text-field name="presetName" label="<%= t('presets.preset_name') %>" value="<%= selectedPreset.displayName %>" required variant="outlined" class="preset-name-input"></mdui-text-field>
+                        <div class="preset-header-actions">
+                            <span class="preset-stat-chip on"><%= t('presets.enabled_chip', { enabled: presetStats.enabled, total: presetStats.total }) %></span>
+                            <span class="preset-stat-chip file"><%= selectedPreset.fileName %></span>
+                            <mdui-button id="preset-save-btn" type="submit" variant="filled" icon="save"><%= t('presets.save_btn') %></mdui-button>
+                            <mdui-button id="preset-export-btn" variant="tonal" icon="download"><%= t('presets.export_btn') %></mdui-button>
+                        </div>
+                    </div>
+
+                    <mdui-tabs value="tab-sampling" class="preset-editor-tabs">
+                        <mdui-tab value="tab-sampling"><%= t('presets.sampling_params') %></mdui-tab>
+                        <mdui-tab value="tab-prompts"><%= t('presets.prompt_items') %></mdui-tab>
+                        <mdui-tab value="tab-raw"><%= t('presets.raw_json') %></mdui-tab>
+
+                        <mdui-tab-panel value="tab-sampling" slot="panel">
+                            <div class="preset-sampling-grid">
+                                <div class="preset-sampling-col">
+                                    <h4><%= t('presets.core_sampling') %></h4>
+                                    <div class="setting-item"><label>Temperature <span id="val-temperature">1.00</span></label><mdui-slider id="slider-temperature" min="0" max="2" step="0.01" value="1"></mdui-slider></div>
+                                    <div class="setting-item"><label>Top P <span id="val-top_p">1.00</span></label><mdui-slider id="slider-top_p" min="0" max="1" step="0.01" value="1"></mdui-slider></div>
+                                    <div class="setting-item"><label>Top K <span id="val-top_k">0</span></label><mdui-slider id="slider-top_k" min="0" max="100" step="1" value="0"></mdui-slider></div>
+                                    <div class="setting-item"><label>Min P <span id="val-min_p">0.00</span></label><mdui-slider id="slider-min_p" min="0" max="1" step="0.01" value="0"></mdui-slider></div>
+                                    <div class="setting-item"><label>Top A <span id="val-top_a">0.00</span></label><mdui-slider id="slider-top_a" min="0" max="1" step="0.01" value="0"></mdui-slider></div>
+                                </div>
+                                <div class="preset-sampling-col">
+                                    <h4><%= t('presets.penalty_advanced') %></h4>
+                                    <div class="setting-item"><label>Repetition Penalty <span id="val-repetition_penalty">1.00</span></label><mdui-slider id="slider-repetition_penalty" min="1" max="2" step="0.01" value="1"></mdui-slider></div>
+                                    <div class="setting-item"><label>Frequency Penalty <span id="val-frequency_penalty">0.00</span></label><mdui-slider id="slider-frequency_penalty" min="-2" max="2" step="0.01" value="0"></mdui-slider></div>
+                                    <div class="setting-item"><label>Presence Penalty <span id="val-presence_penalty">0.00</span></label><mdui-slider id="slider-presence_penalty" min="-2" max="2" step="0.01" value="0"></mdui-slider></div>
+                                    <div class="setting-item preset-switches">
+                                        <mdui-checkbox id="check-stream_openai"><%= t('presets.stream') %></mdui-checkbox>
+                                        <mdui-checkbox id="check-wrap_in_quotes"><%= t('presets.wrap_quotes') %></mdui-checkbox>
+                                    </div>
+                                </div>
+                            </div>
+                        </mdui-tab-panel>
+
+                        <mdui-tab-panel value="tab-prompts" slot="panel">
+                            <div class="prompts-management-block">
+                                <div class="prompt-order-section">
+                                    <div class="section-head">
+                                        <h4><%= t('presets.prompt_orchestration') %></h4>
+                                        <div class="section-head-actions">
+                                            <span class="hint-text"><%= t('presets.prompt_hint') %></span>
+                                            <mdui-button id="add-prompt-entry-btn" variant="tonal" icon="add" style="margin-left:12px;"><%= t('presets.add_entry') %></mdui-button>
+                                        </div>
+                                    </div>
+                                    <div id="ui-prompt-collapse-container" class="prompt-collapse-list">
+                                        <%# Prompts will be rendered via client-side JS for better animation and performance %>
+                                    </div>
+                                </div>
+                            </div>
+                        </mdui-tab-panel>
+
+                        <mdui-tab-panel value="tab-raw" slot="panel">
+                            <div class="raw-json-editor-block">
+                                <textarea id="preset-json-editor" name="presetJson" rows="26"><%= selectedPreset.jsonText %></textarea>
+                                <div class="preset-json-tools">
+                                    <mdui-button id="preset-json-validate" type="button" variant="text" icon="fact_check"><%= t('presets.validate') %></mdui-button>
+                                    <mdui-button id="preset-json-format" type="button" variant="text" icon="data_object"><%= t('presets.format') %></mdui-button>
+                                </div>
+                            </div>
+                        </mdui-tab-panel>
+                    </mdui-tabs>
+                </form>
+
+                <div class="preset-bottom-actions">
+                    <mdui-button id="open-restore-preset-dialog" variant="tonal" icon="settings_backup_restore"><%= t('presets.restore_default') %></mdui-button>
+                    <div style="flex:1;"></div>
+                    <mdui-button id="open-delete-preset-dialog" variant="tonal" icon="delete" style="color:rgb(var(--mdui-color-error));"><%= t('presets.delete_preset') %></mdui-button>
+                </div>
+
+                <mdui-dialog id="restore-preset-confirm-dialog" class="alert-dialog" close-on-overlay-click>
+                    <span slot="headline"><%= t('presets.restore_confirm_title') %></span>
+                    <p><%= t('presets.restore_confirm_msg') %></p>
+                    <div slot="action">
+                        <mdui-button variant="text" onclick="this.closest('mdui-dialog').open = false;"><%= t('common.cancel') %></mdui-button>
+                        <mdui-button id="confirm-restore-preset-btn" variant="filled"><%= t('presets.confirm_restore') %></mdui-button>
+                    </div>
+                </mdui-dialog>
+
+                <mdui-dialog id="delete-preset-confirm-dialog" class="alert-dialog" close-on-overlay-click>
+                    <span slot="headline"><%= t('presets.delete_confirm_title') %></span>
+                    <p><%= t('presets.delete_confirm_msg') %></p>
+                    <div slot="action">
+                        <mdui-button variant="text" onclick="this.closest('mdui-dialog').open = false;"><%= t('common.cancel') %></mdui-button>
+                        <mdui-button id="confirm-delete-preset-btn" variant="filled" style="color:rgb(var(--mdui-color-on-error));background:rgb(var(--mdui-color-error));"><%= t('common.delete_confirm') %></mdui-button>
+                    </div>
+                </mdui-dialog>
+
+                <%# Create preset dialog %>
+                <mdui-dialog id="create-preset-dialog" close-on-overlay-click>
+                    <span slot="headline"><%= t('presets.create_title') %></span>
+                    <div style="padding:8px 0; display:flex; flex-direction:column; gap:12px;">
+                        <mdui-text-field id="create-preset-name" label="<%= t('presets.file_name_label') %>" placeholder="my-preset" variant="outlined" required></mdui-text-field>
+                    </div>
+                    <div slot="action">
+                        <mdui-button variant="text" onclick="document.getElementById('create-preset-dialog').open = false;"><%= t('common.cancel') %></mdui-button>
+                        <mdui-button id="confirm-create-preset-btn" variant="filled"><%= t('common.create') %></mdui-button>
+                    </div>
+                </mdui-dialog>
+
+                <%# Add prompt entry dialog %>
+                <mdui-dialog id="add-prompt-entry-dialog" close-on-overlay-click>
+                    <span slot="headline"><%= t('presets.add_entry_title') %></span>
+                    <div style="padding:8px 0; display:flex; flex-direction:column; gap:12px;">
+                        <mdui-text-field id="new-entry-identifier" label="<%= t('presets.entry_identifier') %>" placeholder="my_prompt" variant="outlined" required></mdui-text-field>
+                        <mdui-text-field id="new-entry-name" label="<%= t('presets.entry_name') %>" placeholder="<%= t('presets.entry_name_placeholder') %>" variant="outlined"></mdui-text-field>
+                        <mdui-select id="new-entry-role" label="<%= t('presets.role') %>" value="system">
+                            <mdui-menu-item value="system">system</mdui-menu-item>
+                            <mdui-menu-item value="user">user</mdui-menu-item>
+                            <mdui-menu-item value="assistant">assistant</mdui-menu-item>
+                        </mdui-select>
+                        <mdui-text-field id="new-entry-content" label="Content" placeholder="<%= t('presets.entry_content_placeholder') %>" variant="outlined" multiline rows="4"></mdui-text-field>
+                    </div>
+                    <div slot="action">
+                        <mdui-button variant="text" onclick="document.getElementById('add-prompt-entry-dialog').open = false;"><%= t('common.cancel') %></mdui-button>
+                        <mdui-button id="confirm-add-entry-btn" variant="filled"><%= t('common.add') %></mdui-button>
+                    </div>
+                </mdui-dialog>
+
+                <%# Delete prompt entry confirm dialog %>
+                <mdui-dialog id="delete-entry-confirm-dialog" close-on-overlay-click>
+                    <span slot="headline"><%= t('presets.delete_entry_title') %></span>
+                    <p id="delete-entry-name-display" style="white-space:pre-wrap; word-break:break-all;"></p>
+                    <div slot="action">
+                        <mdui-button variant="text" onclick="document.getElementById('delete-entry-confirm-dialog').open = false;"><%= t('common.cancel') %></mdui-button>
+                        <mdui-button id="confirm-delete-entry-btn" variant="filled" style="color:rgb(var(--mdui-color-on-error));background:rgb(var(--mdui-color-error));"><%= t('common.delete_confirm') %></mdui-button>
+                    </div>
+                </mdui-dialog>
+            <% } %>
+        </mdui-card>
+    </div>
+</div>

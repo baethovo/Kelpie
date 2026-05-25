@@ -1,0 +1,18 @@
+<mdui-top-app-bar scroll-behavior="elevate" scroll-target="mdui-layout-main">
+    <mdui-button-icon id="drawer-toggle" icon="menu" aria-label="<%= t('common.open_nav') %>"></mdui-button-icon>
+    <mdui-top-app-bar-title>
+        <%= typeof room !== 'undefined' && room ? room.title : 'Kelpie' %>
+        <% if (typeof room !== 'undefined' && room) { %>
+            <small style="opacity: 0.6; font-size: 12px; margin-left: 8px; font-family: var(--mdui-font-family-mono);">ID: <%= room.code %></small>
+        <% } %>
+    </mdui-top-app-bar-title>
+    <div style="flex: 1"></div>
+    <mdui-button-icon id="room-additional-wb-toggle" icon="library_add" aria-label="<%= t('room.additional_lorebook') || 'Additional Lore Books' %>" style="display: none;"></mdui-button-icon>
+    <mdui-button-icon id="room-regex-toggle" icon="rule" aria-label="<%= t('room.regex_mapping') %>" style="display: none;"></mdui-button-icon>
+    <mdui-button-icon id="room-info-toggle" icon="info" aria-label="<%= t('common.room_info') %>" style="display: none;"></mdui-button-icon>
+    <mdui-tooltip content="<%= t('common.my_persona') %>">
+        <mdui-button-icon id="room-persona-toggle" icon="person_search" aria-label="<%= t('common.my_persona') %>" style="display: none;"></mdui-button-icon>
+    </mdui-tooltip>
+
+    <mdui-button-icon id="theme-toggle" icon="light_mode" aria-label="<%= t('common.toggle_theme') %>"></mdui-button-icon>
+</mdui-top-app-bar>

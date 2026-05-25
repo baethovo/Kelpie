@@ -1,0 +1,15 @@
+<%- include('../layouts/main-layout', {
+    title: t('room.room_title') + ' - Kelpie',
+    user,
+    showNavbar: true,
+    wrapperClass: 'room-wrapper',
+    bodyClass: 'room-page',
+    room,
+    session,
+    narrator,
+    members,
+    messages,
+    apiProfiles,
+    presets,
+    contentPartial: 'room/content',
+}) %>

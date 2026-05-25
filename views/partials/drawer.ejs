@@ -1,0 +1,43 @@
+<mdui-navigation-drawer id="app-drawer" data-turbo-permanent close-on-esc close-on-overlay-click>
+    <div class="drawer-content-wrapper">
+        <div class="drawer-header">
+            <mdui-button-icon id="drawer-close" icon="close" aria-label="<%= t('common.close_drawer') %>"></mdui-button-icon>
+            <mdui-avatar class="user-avatar-sync"
+                src="/api/user/avatar/<%= encodeURIComponent(user ? user.userid : 'Guest') %>?t=<%= Date.now() %>"></mdui-avatar>
+            <div class="user-info">
+                <div class="username">
+                    <%= user ? user.username : t('common.not_logged_in') %>
+                </div>
+                <div class="user-role">
+                    <%= user ? user.role : t('common.guest') %>
+                </div>
+            </div>
+        </div>
+
+        <mdui-divider></mdui-divider>
+
+        <mdui-list style="flex-grow: 1;">
+            <mdui-list-item rounded icon="home" href="/" <%=title==='Kelpie' ? 'active' : '' %>><%= t('common.home') %></mdui-list-item>
+            <mdui-list-item rounded icon="chat" href="/sessions" <%=title && title.includes(t('common.sessions')) ? 'active' : ''
+                %>><%= t('common.sessions') %></mdui-list-item>
+            <mdui-list-item rounded icon="badge" href="/characters" <%=title && title.includes(t('characters.title'))
+                ? 'active' : '' %>><%= t('common.characters') %></mdui-list-item>
+            <mdui-list-item rounded icon="auto_stories" href="/worldbooks" <%=title && title.includes(t('worldbooks.title'))
+                ? 'active' : '' %>><%= t('worldbooks.title') %></mdui-list-item>
+            <mdui-list-item rounded icon="tune" href="/presets" <%=title && title.includes(t('presets.title')) ? 'active' : ''
+                %>><%= t('common.presets') %></mdui-list-item>
+            <mdui-list-item rounded icon="api" href="/api-config" <%=title && title.includes(t('api.title')) ? 'active' : '' %>><%= t('common.api_config') %></mdui-list-item>
+            <mdui-list-item rounded icon="settings" href="/settings" <%=title && title.includes(t('settings.title')) ? 'active' : ''
+                %>><%= t('common.settings') %></mdui-list-item>
+        </mdui-list>
+
+        <% if (user) { %>
+            <mdui-divider></mdui-divider>
+            <div class="drawer-footer">
+                <form method="post" action="/logout" style="margin: 0;" data-turbo="false">
+                    <mdui-button type="submit" variant="tonal" icon="logout" full-width><%= t('common.logout') %></mdui-button>
+                </form>
+            </div>
+            <% } %>
+    </div>
+</mdui-navigation-drawer>
