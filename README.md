@@ -1,7 +1,4 @@
-
-<p align="center">
-  <h1>KELPIE</h1>
-</p>
+# Kelpie
 
 <p align="center">
   <strong>English</strong> | <a href="README.ZH.md">中文</a>
