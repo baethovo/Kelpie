@@ -95,3 +95,4 @@ This project is developed with the assistance of vibe coding. Currently, there a
 
 * [MDUI](https://github.com/zdhxiong/mdui)
 * [SillyTavern](https://github.com/SillyTavern/SillyTavern)
+* [Tavern-Helper](https://github.com/N0VI028/JS-Slash-Runner)
