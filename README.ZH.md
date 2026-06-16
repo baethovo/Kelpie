@@ -1,8 +1,8 @@
-# Kelpie
 
 <p align="center">
-  <img src="assets/icon.png" alt="Kelpie" width="128">
+  <h1>KELPIE</h1>
 </p>
+
 
 <p align="center">
   <a href="README.md">English</a> | <strong>中文</strong>
@@ -12,9 +12,13 @@
 
 Kelpie 是一个基于 LLM 的在线 TRPG（桌上角色扮演游戏）平台，提供了丰富的功能来支持玩家和游戏主持人（GM）进行互动和游戏管理。
 
-*   **多人游玩** — 支持多位玩家同时在线参与 LLM 角色扮演。
-*   **SillyTavern 兼容** — 支持导入 SillyTavern 格式的角色卡、对话补全预设和世界书。
-*   **HTML 渲染** — 支持在对话中渲染 HTML 页面。
+* **多人游玩** — 支持多位玩家同时在线参与 LLM 角色扮演。
+* **SillyTavern 兼容** — 支持导入 SillyTavern 格式的角色卡、对话补全预设和世界书。
+* **HTML 渲染** — 支持在对话中渲染 HTML 页面。
+
+## 文档
+
+[![文档](https://img.shields.io/badge/文档-blue?style=for-the-badge)](./docs/README.md)
 
 ## 快速开始
 
@@ -22,8 +26,8 @@ Kelpie 是一个基于 LLM 的在线 TRPG（桌上角色扮演游戏）平台，
 
 #### 环境要求
 
-*   Node.js >= 18
-*   npm
+* Node.js >= 18
+* npm
 
 #### 安装
 
@@ -65,14 +69,17 @@ docker-compose up -d
 
 #### 方式二：使用 Docker CLI
 
-1.  构建镜像：
-    ```bash
-    docker build -t kelpie .
-    ```
-2.  运行容器（挂载 `data` 和 `config` 目录以实现数据持久化）：
-    ```bash
-    docker run -d -p 3000:3000 -v ./data:/app/data -v ./config:/app/config --name kelpie-app kelpie
-    ```
+1. 构建镜像：
+   
+   ```bash
+   docker build -t kelpie .
+   ```
+
+2. 运行容器（挂载 `data` 和 `config` 目录以实现数据持久化）：
+   
+   ```bash
+   docker run -d -p 3000:3000 -v ./data:/app/data -v ./config:/app/config --name kelpie-app kelpie
+   ```
 
 > [!NOTE]
 > 第一个注册的账户将会自动成为管理员账户。
@@ -88,5 +95,5 @@ docker-compose up -d
 
 ## 特别鸣谢
 
-*   [MDUI](https://github.com/zdhxiong/mdui)
-*   [SillyTavern](https://github.com/SillyTavern/SillyTavern)
+* [MDUI](https://github.com/zdhxiong/mdui)
+* [SillyTavern](https://github.com/SillyTavern/SillyTavern)
