@@ -1,8 +1,4 @@
-
-<p align="center">
-  <h1>KELPIE</h1>
-</p>
-
+# Kelpie
 
 <p align="center">
   <a href="README.md">English</a> | <strong>中文</strong>
@@ -97,3 +93,4 @@ docker-compose up -d
 
 * [MDUI](https://github.com/zdhxiong/mdui)
 * [SillyTavern](https://github.com/SillyTavern/SillyTavern)
+* [Tavern-Helper](https://github.com/N0VI028/JS-Slash-Runner)
